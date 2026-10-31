@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>برنامج العمرة اليومي</title>
+<style>
+:root{--bg:#f6f3ea;--card:#fff;--tx:#1f2a24;--mut:#6b756f;--ac:#1b6b4a;--hl:#e3f2e9;--bd:#e2ddcf;--gold:#b8892b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121815;--card:#1b241f;--tx:#e8efe9;--mut:#9aa8a0;--ac:#4cc38a;--hl:#20362a;--bd:#2a3730;--gold:#e0b44f}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font-family:"Segoe UI",Tahoma,Arial,sans-serif;max-width:560px;margin:0 auto;padding:14px 14px 40px}
+.logo{text-align:center;margin-top:4px}
+.badge{width:74px;height:74px;border-radius:50%;margin:0 auto 6px;background:var(--ac);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:38px}
+h1{font-size:20px;margin:4px 0 2px;text-align:center}
+.slogan{text-align:center;color:var(--gold);font-size:16px;font-weight:700;margin:2px 0 6px}
+.sub{text-align:center;color:var(--mut);font-size:13px}
+.clock{text-align:center;font-size:34px;font-weight:700;color:var(--ac);margin:8px 0 2px;direction:ltr}
+.next{background:var(--hl);border-radius:12px;padding:10px;text-align:center;font-size:14px;margin:8px 0 12px}
+.days{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px}
+.d{flex:0 0 auto;min-width:44px;padding:7px 4px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font-size:13px;text-align:center}
+.d.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.ctl button,.ctl label{flex:1;background:var(--card);border:1px solid var(--bd);color:var(--tx);padding:9px;border-radius:10px;font-size:13px;text-align:center}
+.opt{background:var(--card);border:1px solid var(--gold);border-radius:12px;padding:10px;margin-bottom:10px;font-size:14px}
+.opt div{display:flex;gap:8px;margin-top:8px}
+.opt button{flex:1;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:10px;padding:9px 4px;font-size:13px}
+.opt button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.it{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:8px}
+.it.cur{border-color:var(--ac);box-shadow:0 0 0 2px var(--hl)}
+.it.done,.it.past{opacity:.5}
+.it.done .nm,.it.past .nm{text-decoration:line-through}
+.ic{font-size:22px}
+.nm{flex:1;font-size:15px}
+.nm small{display:block;color:var(--mut);font-size:12px}
+input[type=time],input[type=date]{font-size:15px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:8px;padding:4px;direction:ltr}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--ac)}
+details{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:12px;font-size:14px}
+details label{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+details button{margin-top:10px;width:100%;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:10px;padding:8px}
+#ban{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:10px;right:10px;background:var(--ac);color:#fff;padding:14px;border-radius:12px;font-size:16px;text-align:center;display:none;z-index:9}
+#ban button{margin-top:8px;border:0;border-radius:10px;padding:10px 18px;font-size:15px;font-weight:700}
+.gm{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}.gb{background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:340px;text-align:center}.gb button{display:block;width:100%;margin-top:10px;padding:14px;border-radius:12px;border:1px solid var(--ac);background:var(--ac);color:#fff;font-size:16px}
+.pbox{background:var(--card);border:1px solid var(--gold);border-radius:12px;padding:10px;margin-bottom:12px;text-align:center;font-size:14px;line-height:1.8}.pt{font-weight:700;color:var(--gold)}.bar{height:12px;background:var(--hl);border-radius:8px;overflow:hidden;margin-top:8px}.fill{height:100%;width:0;background:var(--ac);border-radius:8px;transition:width 1s linear}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}.pbox b{display:inline-block;font-size:18px}
+.kb{width:40px;height:40px;display:block}.it.pr{border-color:var(--gold)}.it.pr .nm{font-weight:700}
+.note{font-size:12px;color:var(--mut);margin-top:12px;line-height:1.7}
+.marq{overflow:hidden;white-space:nowrap;border:1px solid var(--gold);border-radius:12px;padding:8px 0;margin-bottom:8px;color:var(--gold);font-weight:700;font-size:15px}.marq span{display:inline-block;animation:mq 10s linear infinite}@keyframes mq{from{transform:translateX(100%)}to{transform:translateX(-100vw)}}
+</style>
+</head>
+<body>
+<div id="ban"><div id="bt"></div><button onclick="stopAl()">⏹ إيقاف التنبيه والصوت</button></div>
+<div class="gm" id="gm"><div class="gb"><h2>مرحباً بك 🕋</h2><p>اختر لنخاطبك بالشكل الصحيح</p><button onclick="setG('m')">👨 ذكر — يا حاج</button><button onclick="setG('f')">👩 أنثى — يا حاجة</button></div></div>
+<div class="marq"><span>لا تنسونا من صالح دعائكم — أخوكم أحمد 🤲</span></div>
+<div class="logo"><div class="badge">🕋</div></div>
+<h1>برنامج العمرة اليومي</h1>
+<div class="slogan">سعي مشكور وذنب مغفور إن شاء الله</div>
+<div class="sub" id="dt"></div>
+<div class="clock" id="ck">--:--</div>
+<div class="next" id="nx"></div>
+<div class="pbox" id="pbx" style="display:none"><div class="pt">🌇 بين المغرب والعشاء</div><div id="pm"></div><div class="bar"><div class="fill" id="pf"></div></div></div>
+<details><summary>⚙️ فترة العمرة والإعدادات</summary>
+<label>من تاريخ <input type="date" id="from" onchange="setRange()"></label>
+<label>إلى تاريخ <input type="date" id="to" onchange="setRange()"></label>
+<label>مواقيت الصلاة تلقائياً (حسب موقعك وتاريخ اليوم) <input type="checkbox" id="auto" onchange="setAuto()"></label>
+<label>المدينة <select id="city" onchange="setCity(this.value)"><option value="mecca">مكة المكرمة</option><option value="medina">المدينة المنورة</option><option value="gps">موقعي الحالي (GPS)</option></select></label>
+<button onclick="getLoc()">📍 تحديث موقعي</button>
+<div class="note" id="locm"></div>
+<label>وقت صلاة المغرب <input type="time" id="mgt" onchange="setPr()"></label>
+<label>وقت صلاة العشاء <input type="time" id="ist" onchange="setPr()"></label>
+<label>صوت التنبيه <select id="ssel" onchange="setSnd(this.value)"></select></label>
+<label>ملف الأذان <input type="file" accept="audio/*" onchange="pickAd(this)"></label>
+<div class="note" id="adn">لاستعمال الأذان: اختر «أذان» من قائمة الصوت ثم حدّد ملفاً صوتياً من هاتفك.</div>
+<label>الجنس <select id="gsel" onchange="setG(this.value)"><option value="m">ذكر</option><option value="f">أنثى</option></select></label>
+<button onclick="S.t={};sv();draw()">إرجاع الأوقات الافتراضية</button>
+</details>
+<div class="days" id="days"></div>
+<div class="ctl">
+<button onclick="askPerm()">🔔 تفعيل الإشعارات</button>
+<button onclick="testAl()">🔊 تجربة التنبيه</button>
+<button onclick="stopAl()">⏹ إيقاف الصوت</button>
+<label><input type="checkbox" id="pre" onchange="sv()"> تذكير قبل 10 دقائق</label>
+</div>
+<div id="list"></div>
+<div class="note">اضغط على الوقت لتعديله (مثل وقت العودة بعد الفجر أو العشاء). في نسخة التطبيق (APK) تصل التنبيهات حتى والتطبيق مغلق؛ أما في المتصفح فتعمل والصفحة مفتوحة.</div>
+<script>
+var BASE=[
+["wake","03:15","النهوض","⏰","استعداد للخروج"],
+["out1","03:40","الخروج من الفندق","🚶",""],
+["haram1","03:45","التوجه إلى الحرم","🕋","صلاة الفجر في الحرم"],
+["back1","06:15","الرجوع إلى الفندق بعد صلاة الفجر","🏨","عدّل الوقت حسب خروجك"],
+["bf","07:00","وجبة الإفطار (حتى 7:30)","🍳",""],
+["room","07:45","العودة إلى الغرفة للراحة","🛏️",""],
+["out2","11:00","الخروج من الفندق والتوجه إلى الحرم","🚶","صلاة الظهر"],
+["lunch","12:45","الرجوع إلى الفندق وتناول الغداء","🍽️","عدّل الوقت بعد الظهر"],
+["nap","13:30","قيلولة خفيفة (20–30 دقيقة)","😴",""],
+["out3","14:30","التوجه إلى الحرم لصلاة العصر","🕋",""],
+["dinner","19:30","الرجوع إلى الفندق وتناول العشاء","🍽️","عدّل الوقت بعد العشاء"],
+["sleep","21:15","النوم","🌙","العودة إلى الغرفة"],
+["pf","05:05","صلاة الفجر","🌅","يُحسب تلقائياً حسب موقعك",1],
+["pd","12:05","صلاة الظهر","☀️","يُحسب تلقائياً حسب موقعك",1],
+["pa","15:20","صلاة العصر","🌤️","يُحسب تلقائياً حسب موقعك",1],
+["pm","17:45","صلاة المغرب","🌇","يُحسب تلقائياً حسب موقعك",1],
+["pi","19:15","صلاة العشاء","🌙","يُحسب تلقائياً حسب موقعك",1]];
+var STAY=["stay","16:00","المكوث في الحرم حتى صلاة العشاء","🕌","اختيارك بعد العصر"];
+var REST=[["rest","16:00","العودة إلى الفندق لأخذ قسط من الراحة","🏨","اختيارك بعد العصر"],["out4","17:15","العودة إلى الحرم لصلاة المغرب والعشاء","🕋",""]];
+function p2(n){return(n<10?"0":"")+n}
+function hj(){return S.g=="f"?"يا حاجة":"يا حاج"}
+function pr(){return S.g=="f"?"تهيّئي":"تهيّأ"}
+function setG(v){S.g=v;document.getElementById("gm").style.display="none";document.getElementById("gsel").value=v;sv();draw()}
+function iso(d){return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())}
+function mins(s){var a=s.split(":");return +a[0]*60+ +a[1]}
+var S={auto:true,city:"mecca",loc:{lat:21.4225,lng:39.8262,n:"مكة المكرمة",tz:3},mg:"17:45",is:"19:15",snd:"bip",g:null,t:{},pre:true,done:{},opt:{},fired:{},from:"2026-11-01",to:"2026-11-30",day:null};
+try{var o=JSON.parse(localStorage.getItem("omra2")||"{}");for(var k in o)S[k]=o[k]}catch(e){}
+if(S.city!="gps"&&S.loc.tz==null){S.city="mecca";S.loc={lat:21.4225,lng:39.8262,n:"مكة المكرمة",tz:3}}
+var nt;
+function sv(){S.pre=document.getElementById("pre").checked;try{localStorage.setItem("omra2",JSON.stringify(S))}catch(e){}clearTimeout(nt);nt=setTimeout(nat,1500)}
+function range(){var a=[],d=new Date(S.from+"T00:00:00"),e=new Date(S.to+"T00:00:00");while(d<=e&&a.length<60){a.push(iso(d));d.setDate(d.getDate()+1)}return a}
+function items(ds){var a=BASE.slice();if((S.opt[ds]||"stay")=="stay")a.push(STAY);else a=a.concat(REST);
+a=a.map(function(x){return{id:x[0],t:(x[5]?prayT(ds,x[0],x[1]):(S.t[x[0]]||x[1])),n:x[2],i:x[3],s:x[4],p:x[5]}});a.sort(function(p,q){return mins(p.t)-mins(q.t)});return a}
+function setRange(){S.from=document.getElementById("from").value||S.from;S.to=document.getElementById("to").value||S.to;if(S.to<S.from)S.to=S.from;S.day=null;fixDay();sv();drawDays();draw()}
+function fixDay(){var r=range(),t=iso(new Date());if(!S.day||r.indexOf(S.day)<0)S.day=r.indexOf(t)>=0?t:r[0]}
+function drawDays(){var h="";range().forEach(function(s){h+='<button class="d'+(s==S.day?" on":"")+'" onclick="S.day=\''+s+'\';sv();drawDays();draw()">'+(+s.slice(8))+"/"+(+s.slice(5,7))+'</button>'});document.getElementById("days").innerHTML=h;
+setTimeout(function(){var e=document.querySelector(".d.on");e&&e.scrollIntoView({inline:"center",block:"nearest"})},50)}
+function setOpt(v){S.opt[S.day]=v;sv();draw()}
+function chk(id,v){S.done[S.day+id]=v;sv();draw()}
+function setT(id,v){if(v){if(id=="pm")S.mg=v;else if(id=="pi")S.is=v;else S.t[id]=v;document.getElementById("mgt").value=S.mg;document.getElementById("ist").value=S.is;sv();draw();prog()}}
+function draw(){
+var n=new Date(),nm=n.getHours()*60+n.getMinutes(),isT=(S.day==iso(n)),it=items(S.day),o=S.opt[S.day]||"stay",cur=-1,nxt=-1;
+if(isT){it.forEach(function(x,i){if(mins(x.t)<=nm)cur=i});for(var j=0;j<it.length;j++){if(mins(it[j].t)>nm){nxt=j;break}}}
+var td=iso(n),d2=new Date(n.getTime());d2.setDate(d2.getDate()+1);var tmw=iso(d2);if(isT&&nxt<0&&cur>=0&&S.adv!=td&&tmw<=S.to){S.adv=td;S.day=tmw;sv();drawDays();draw();return}NX=isT?(nxt>=0?{n:it[nxt].n,t:it[nxt].t}:{end:1}):((S.adv==td&&S.day==tmw)?{end:1}:null);var h='<div class="opt">🕌 بعد صلاة العصر (اختياري):<div><button class="'+(o=="stay"?"on":"")+'" onclick="setOpt(\'stay\')">البقاء في الحرم</button><button class="'+(o=="rest"?"on":"")+'" onclick="setOpt(\'rest\')">العودة للفندق للراحة</button></div></div>';
+it.forEach(function(x,i){var dn=S.done[S.day+x.id],ps=(S.day<iso(n))||(isT&&i<cur);
+h+='<div class="it'+(i==cur?" cur":"")+(dn?" done":"")+(ps?" past":"")+(x.p?" pr":"")+'"><input type="checkbox" '+(dn?"checked":"")+' onchange="chk(\''+x.id+'\',this.checked)"><span class="ic">'+(x.p?KB:x.i)+'</span><div class="nm">'+(x.p?x.i+" ":"")+x.n+(x.s?"<small>"+x.s+"</small>":"")+'</div><input type="time" value="'+x.t+'" onchange="setT(\''+x.id+'\',this.value)"'+(x.p&&S.auto?" disabled":"")+'></div>'});
+document.getElementById("list").innerHTML=h;
+document.getElementById("nx").textContent=isT?(nxt>=0?"القادم: "+it[nxt].n+" — "+it[nxt].t:"انتهى برنامج اليوم، تقبّل الله منك 🤲"):"عرض برنامج يوم "+(+S.day.slice(8))+"/"+(+S.day.slice(5,7));upNx()}
+function tick(){var n=new Date();var td=iso(n);if(td!=LD){LD=td;PC={};if(td>=S.from&&td<=S.to&&S.day!=td){S.day=td;drawDays()}draw();nat()}
+document.getElementById("ck").textContent=p2(n.getHours())+":"+p2(n.getMinutes())+":"+p2(n.getSeconds());prog();upNx();
+document.getElementById("dt").textContent=n.toLocaleDateString("ar",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+var ds=iso(n),nm=n.getHours()*60+n.getMinutes();
+if(ds>=S.from&&ds<=S.to){items(ds).forEach(function(x){var m=mins(x.t);
+var k1=ds+"n"+x.id;if(m==nm&&!S.fired[k1]){S.fired[k1]=1;alarm(hj()+"، حان الآن: "+x.n,x.id=="sleep");draw()}
+var k2=ds+"p"+x.id;if(S.pre&&m-10==nm&&!S.fired[k2]){S.fired[k2]=1;alarm(hj()+"، بعد 10 دقائق "+pr()+" لـ: "+x.n,x.id=="sleep")}});
+try{localStorage.setItem("omra2",JSON.stringify(S))}catch(e){}}
+if(n.getSeconds()==0)draw()}
+var ac,tmr;
+var SND={bip:{n:"بيب كلاسيكي",f:[880,880,880,880],w:"sine",d:.4},bell:{n:"جرس",f:[1318,988,1318,988],w:"triangle",d:.6},soft:{n:"نغمة هادئة",f:[523,659,784],w:"sine",d:.7},alarm:{n:"منبّه قوي",f:[1000,700,1000,700,1000,700],w:"square",d:.25},mute:{n:"صامت (اهتزاز فقط)",f:[],w:"sine",d:.4},adhan:{n:"أذان (ملف تختاره)",f:[],w:"sine",d:.4}};
+function beep(){if(S.snd=="adhan"&&playAd())return;var s=SND[S.snd=="adhan"?"bip":(S.snd||"bip")];if(!s||!s.f.length)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();var t=ac.currentTime;s.f.forEach(function(fr,i){var o=ac.createOscillator(),g=ac.createGain(),a=t+i*s.d;o.type=s.w;o.frequency.value=fr;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.3,a);g.gain.exponentialRampToValueAtTime(.001,a+s.d*.9);o.start(a);o.stop(a+s.d)})}catch(e){}}
+function setSnd(v){S.snd=v;sv();if(v=="adhan"&&!adBlob)document.getElementById("adn").textContent="⚠️ حدّد ملف الأذان من الزر أعلاه";beep()}
+var KB='<svg class="kb" viewBox="0 0 40 40" role="img" aria-label="الكعبة المشرفة"><polygon points="5,12 14,8 37,8 28,12" fill="#3a3a3a"/><rect x="5" y="12" width="23" height="24" fill="#0d0d0d"/><polygon points="28,12 37,8 37,32 28,36" fill="#1c1c1c"/><rect x="5" y="16" width="23" height="3.5" fill="#d4a62a"/><polygon points="28,16 37,12.5 37,16 28,19.5" fill="#b8891f"/><rect x="12" y="25" width="7" height="11" rx="1" fill="#d4a62a"/></svg>';
+var PC={};
+function dtr(d){return d*Math.PI/180}function rtd(r){return r*180/Math.PI}
+function sn(d){return Math.sin(dtr(d))}function cs(d){return Math.cos(dtr(d))}
+function fx(a,b){a=a-b*Math.floor(a/b);return a<0?a+b:a}
+function julian(y,m,d){if(m<=2){y-=1;m+=12}var A=Math.floor(y/100),B=2-A+Math.floor(A/4);return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5}
+function sunPos(jd){var D=jd-2451545,g=fx(357.529+0.98560028*D,360),q=fx(280.459+0.98564736*D,360),L=fx(q+1.915*sn(g)+0.020*sn(2*g),360),e=23.439-0.00000036*D,RA=fx(rtd(Math.atan2(cs(e)*sn(L),cs(L)))/15,24),eq=q/15-RA;if(eq>12)eq-=24;if(eq<-12)eq+=24;return{d:rtd(Math.asin(sn(e)*sn(L))),e:eq}}
+function PT(ds){var k=ds+"|"+S.loc.lat+"|"+S.loc.lng+"|"+S.loc.tz;if(PC[k])return PC[k];
+var dt=new Date(ds+"T12:00:00"),tz=(S.loc.tz!=null?S.loc.tz:-dt.getTimezoneOffset()/60),lat=S.loc.lat,lng=S.loc.lng,jd=julian(dt.getFullYear(),dt.getMonth()+1,dt.getDate())-lng/360,sa=(lat>=16&&lat<=33&&lng>=34&&lng<=56),fa=sa?18.5:18;
+function sp(t){return sunPos(jd+t/24)}
+function mid(t){return fx(12-sp(t).e,24)}
+function at(a,t,ccw){var d=sp(t).d,c=(-sn(a)-sn(d)*sn(lat))/(cs(d)*cs(lat));c=Math.max(-1,Math.min(1,c));var v=rtd(Math.acos(c))/15;return mid(t)+(ccw?-v:v)}
+function asr(f,t){var d=sp(t).d,a=-rtd(Math.atan(1/(f+Math.tan(dtr(Math.abs(lat-d))))));return at(a,t,false)}
+var T={fj:5,dh:12,as:13,mg:18,is:18};
+for(var i=0;i<2;i++){T={fj:at(fa,T.fj,true),dh:mid(T.dh),as:asr(1,T.as),mg:at(0.833,T.mg,false),is:sa?0:at(17,T.is,false)}}
+if(sa)T.is=T.mg+1.5;
+var o={},adj=tz-lng/15,m={pf:T.fj,pd:T.dh,pa:T.as,pm:T.mg,pi:T.is};
+for(var id in m){var v=fx(m[id]+adj,24),mn=Math.round(v*60)%1440;o[id]=p2(Math.floor(mn/60))+":"+p2(mn%60)}
+return PC[k]=o}
+function prayT(ds,id,def){if(S.auto)return PT(ds)[id];return id=="pm"?S.mg:id=="pi"?S.is:(S.t[id]||def)}
+function ui(){document.getElementById("auto").checked=!!S.auto;document.getElementById("city").value=S.city;var a=document.getElementById("mgt"),b=document.getElementById("ist");a.disabled=b.disabled=!!S.auto;a.value=prayT(iso(new Date()),"pm");b.value=prayT(iso(new Date()),"pi");document.getElementById("locm").textContent="الموقع: "+S.loc.n+" ("+S.loc.lat.toFixed(2)+"، "+S.loc.lng.toFixed(2)+")"}
+function setCity(v){S.city=v;if(v=="mecca")S.loc={lat:21.4225,lng:39.8262,n:"مكة المكرمة",tz:3};else if(v=="medina")S.loc={lat:24.4686,lng:39.6142,n:"المدينة المنورة",tz:3};PC={};sv();ui();draw();prog();if(v=="gps")getLoc()}
+function setAuto(){S.auto=document.getElementById("auto").checked;sv();ui();draw();prog()}
+function getLoc(q){var m=document.getElementById("locm");if(!navigator.geolocation){if(!q)m.textContent="الجهاز لا يدعم تحديد الموقع";return}if(!q)m.textContent="جارٍ تحديد موقعك…";navigator.geolocation.getCurrentPosition(function(p){S.city="gps";S.loc={lat:p.coords.latitude,lng:p.coords.longitude,n:"موقعك الحالي"};PC={};sv();ui();draw();prog()},function(){if(!q)m.textContent="تعذّر تحديد الموقع، فعّل صلاحية الموقع للتطبيق. المستعمل الآن: "+S.loc.n},{timeout:20000,maximumAge:600000})}
+var NX=null,LD=iso(new Date());
+function upNx(){var el=document.getElementById("nx");if(!NX||!el)return;var n=new Date();if(NX.end){var tm=new Date(n.getTime()+86400000),c2=86400-(n.getHours()*3600+n.getMinutes()*60+n.getSeconds())+mins(prayT(iso(tm),"pf","05:05"))*60;el.innerHTML="تقبّل الله منك 🤲<br>عليك بالنوم الآن لتستيقظ باكراً 😴<br>باقي لصلاة الفجر: <b>"+fmt(c2)+"</b>";return}var c=mins(NX.t)*60-(n.getHours()*3600+n.getMinutes()*60+n.getSeconds());if(c<0)c=0;el.innerHTML="القادم: "+NX.n+" — "+NX.t+"<br>باقي: <b>"+fmt(c)+"</b>"}
+function fmt(t){var h=Math.floor(t/3600),m=Math.floor(t%3600/60),c=t%60;return(h?h+" س ":"")+p2(m)+" د "+p2(c)+" ث"}
+function prog(){var n=new Date(),now=n.getHours()*3600+n.getMinutes()*60+n.getSeconds(),a=mins(prayT(iso(n),"pm"))*60,b=mins(prayT(iso(n),"pi"))*60,el=document.getElementById("pm"),f=document.getElementById("pf"),bx=document.getElementById("pbx");if(!el)return;
+if(b<=a){bx.style.display="block";el.textContent="اضبط وقتي المغرب والعشاء من الإعدادات";f.style.width="0%";return}
+var g=Math.round((b-a)/60),gt="المدة بين الصلاتين: "+(Math.floor(g/60)?Math.floor(g/60)+" س ":"")+(g%60?g%60+" د":"");
+if(now<a){bx.style.display="none"}
+else if(now<b){bx.style.display="block";f.style.width=((now-a)/(b-a)*100)+"%";el.innerHTML=gt+"<br>باقي لصلاة العشاء: <b>"+fmt(b-now)+"</b>"}
+else{bx.style.display="none"}}
+function setPr(){S.mg=document.getElementById("mgt").value||S.mg;S.is=document.getElementById("ist").value||S.is;sv();prog();draw()}
+var adBlob=null,ad=null;
+function idb(cb){try{var q=indexedDB.open("omra",1);q.onupgradeneeded=function(){q.result.createObjectStore("f")};q.onsuccess=function(){cb(q.result)}}catch(e){}}
+function mkAd(){try{ad=new Audio(URL.createObjectURL(adBlob))}catch(e){}}
+function loadAd(){idb(function(db){try{var r=db.transaction("f").objectStore("f").get("adhan");r.onsuccess=function(){if(r.result){adBlob=r.result;mkAd();document.getElementById("adn").textContent="✅ تم اختيار ملف الأذان"}}}catch(e){}})}
+function pickAd(inp){var f=inp.files[0];if(!f)return;adBlob=f;idb(function(db){try{db.transaction("f","readwrite").objectStore("f").put(f,"adhan")}catch(e){}});mkAd();document.getElementById("adn").textContent="✅ "+f.name;S.snd="adhan";document.getElementById("ssel").value="adhan";sv();beep()}
+function playAd(){if(!adBlob)return false;if(!ad)mkAd();if(ad&&(ad.paused||ad.ended)){ad.currentTime=0;ad.play().catch(function(){})}return true}
+var atm;
+function alarm(msg,quiet){document.getElementById("bt").textContent=msg;document.getElementById("ban").style.display="block";clearTimeout(atm);
+if(quiet){clearInterval(tmr);atm=setTimeout(stopAl,15000)}else{beep();clearInterval(tmr);tmr=setInterval(beep,3000);atm=setTimeout(function(){clearInterval(tmr);try{ad&&ad.pause()}catch(e){}},60000);try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400])}catch(e){}}
+try{if(window.Notification&&Notification.permission=="granted")new Notification("برنامج العمرة",{body:msg,silent:!!quiet})}catch(e){}}
+function stopAl(){clearInterval(tmr);clearTimeout(atm);try{ad&&ad.pause();navigator.vibrate&&navigator.vibrate(0)}catch(e){}document.getElementById("ban").style.display="none"}
+function askPerm(){nat(true);try{Notification.requestPermission().then(function(p){alarm(p=="granted"?"تم تفعيل الإشعارات ✅":"الإشعارات غير مفعّلة، سيعمل التنبيه الصوتي داخل الصفحة")})}catch(e){alarm("سيعمل التنبيه الصوتي داخل الصفحة")}}
+function testAl(){alarm(hj()+"، هذا تنبيه تجريبي 🔔")}
+/* إشعارات أصلية (Capacitor) لتصل والتطبيق مغلق: تُجدول الأيام السبعة القادمة */
+async function nat(ask){try{var LN=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.LocalNotifications;if(!LN)return;
+var pm0=await LN.requestPermissions();if(pm0.display!="granted")return;if(ask){try{var ex=await LN.checkExactNotificationSetting();if(ex.exact_alarm!="granted")await LN.changeExactNotificationSetting()}catch(e){}}
+try{await LN.createChannel({id:"omra",name:"تنبيهات العمرة",description:"تذكيرات برنامج العمرة",importance:5,visibility:1,vibration:true,lights:true})}catch(e){}
+try{await LN.createChannel({id:"omra_q",name:"تنبيهات هادئة",importance:2,vibration:false})}catch(e){}
+if(S.snd=="adhan"){try{await LN.createChannel({id:"adhan",name:"Adhan",importance:5,vibration:true,sound:"adhan.mp3"})}catch(e){}}
+var pd=await LN.getPending();if(pd.notifications&&pd.notifications.length)await LN.cancel({notifications:pd.notifications});
+var out=[],k=1,now=new Date(),d=new Date();
+for(var j=0;j<7;j++){var ds=iso(d);if(ds>=S.from&&ds<=S.to){items(ds).forEach(function(x){var b=new Date(ds+"T00:00:00");b.setMinutes(mins(x.t));
+[0,S.pre?10:-1].forEach(function(pre){if(pre<0)return;var at=new Date(b.getTime()-pre*60000);if(at>now)out.push({id:k++,title:"برنامج العمرة",body:hj()+(pre?"، بعد 10 دقائق "+pr()+" لـ: ":"، حان الآن: ")+x.n,schedule:{at:at,allowWhileIdle:true},channelId:(x.id=="sleep"||S.snd=="mute"?"omra_q":(S.snd=="adhan"?"adhan":"omra"))})})})}
+d.setDate(d.getDate()+1)}
+if(out.length)await LN.schedule({notifications:out});
+if(ask)alarm("تمت جدولة "+out.length+" تنبيه للأيام القادمة ✅")}catch(e){}}
+document.getElementById("pre").checked=S.pre;var sl=document.getElementById("ssel");for(var kk in SND){var op=document.createElement("option");op.value=kk;op.textContent=SND[kk].n;sl.appendChild(op)}sl.value=S.snd||"bip";loadAd();document.getElementById("mgt").value=S.mg;document.getElementById("ist").value=S.is;ui();if(S.auto&&S.city=="gps")getLoc(true);document.getElementById("gsel").value=S.g||"m";if(!S.g)document.getElementById("gm").style.display="flex";document.getElementById("from").value=S.from;document.getElementById("to").value=S.to;
+fixDay();drawDays();draw();tick();setInterval(tick,1000);nat();
+</script>
+</body>
+</html>
