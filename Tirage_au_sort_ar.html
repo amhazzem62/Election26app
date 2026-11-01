@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>السحب العشوائي</title>
+<style>
+  body{font-family:Tahoma,Arial,sans-serif;background:#f4f4f9;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;margin:0;padding:16px;box-sizing:border-box}
+  .container{background:#fff;padding:20px 24px;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);text-align:center;width:100%;max-width:420px}
+  textarea{width:100%;height:110px;margin-bottom:12px;padding:8px;border:1px solid #ccc;border-radius:4px;resize:vertical;box-sizing:border-box;font-size:15px;font-family:inherit}
+  button{background:#007bff;color:#fff;border:none;padding:10px 15px;font-size:16px;border-radius:4px;cursor:pointer;margin:2px;font-family:inherit}
+  button:hover{background:#0056b3}
+  button.sec{background:#6c757d}
+  button.sec:hover{background:#545b62}
+  #resultat{margin-top:18px;font-size:20px;font-weight:bold;color:#28a745;min-height:28px}
+  #historique{margin:14px 0 0;padding:0;list-style:none;text-align:start}
+  #historique li{padding:6px 10px;border-bottom:1px solid #eee;font-size:15px}
+  .boule{width:110px;height:110px;margin:16px auto 0;position:relative;display:none;animation:rebond .45s ease-in-out infinite alternate}
+  .bille{width:100%;height:100%;border-radius:50%;background:conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#9b59b6,#e74c3c);animation:tourne .5s linear infinite}
+  .boule::after{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 28%,rgba(255,255,255,.85),rgba(255,255,255,0) 45%),radial-gradient(circle at 72% 78%,rgba(0,0,0,.28),rgba(0,0,0,0) 55%)}
+  @keyframes tourne{to{transform:rotate(360deg)}}
+  @keyframes rebond{from{transform:translateY(0)}to{transform:translateY(-14px)}}
+  .aff{position:fixed;inset:0;background:#0b1b3a;color:#fff;z-index:1000;display:none;flex-direction:column}
+  .aff-barre{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 20px;background:#07122a;font-size:22px;font-weight:bold}
+  .aff-barre button{font-size:16px;padding:8px 14px}
+  #affListe{margin:0;padding:20px 40px;overflow:auto;flex:1;column-width:280px;column-gap:30px;font-size:28px;line-height:1.7;list-style-position:inside}
+  #affListe li{break-inside:avoid}
+  #affListe li.err{color:#ff6b6b;font-weight:bold}
+  .aff-legende{padding:6px 20px;font-size:16px;color:#ff9b9b;background:#07122a}
+  .pv{position:fixed;inset:0;background:#e9ecef;z-index:1100;display:none;flex-direction:column}
+  .pv-barre{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;background:#343a40;color:#fff;font-size:15px}
+  .pv-barre input{width:60px;padding:4px;text-align:center}
+  .pv-zone{flex:1;overflow:auto;padding:16px}
+  #procesPage{background:#fff;color:#000;max-width:210mm;min-height:297mm;margin:0 auto;padding:15mm 18mm;box-sizing:border-box;font-size:18px;line-height:2;text-align:right;box-shadow:0 0 8px rgba(0,0,0,.3)}
+  #procesPage h2{text-align:center;text-decoration:underline;margin:0 0 14px}
+  #procesPage table{width:100%;border-collapse:collapse;margin:8px 0 18px}
+  #procesPage th,#procesPage td{border:1px solid #000;padding:2px 8px;text-align:center;line-height:1.7}
+  #procesPage td.nom{text-align:right}
+  #procesPage th{background:#f1f1f1}
+  #procesPage .sous-titre{font-weight:bold;text-decoration:underline;margin-top:10px}
+  #procesPage .signatures{margin-top:24px;font-weight:bold;text-align:center}
+  @media print{
+    @page{size:A4;margin:0}
+    body{display:block!important;background:#fff!important;padding:0!important;min-height:0!important}
+    body > *:not(#proces){display:none!important}
+    #proces{position:static!important;display:block!important;background:#fff!important}
+    .pv-barre{display:none!important}
+    .pv-zone{padding:0!important;overflow:visible!important}
+    #procesPage{box-shadow:none!important;margin:0!important;max-width:none!important}
+  }
+  h3{margin:18px 0 0;font-size:16px;text-align:start}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>السحب العشوائي</h2>
+  <p>أدخل الأسماء (اسم في كل سطر أو مفصولة بفواصل). يمكن إضافة الجنس بعد الاسم لتظهر عبارة «الفائز» أو «الفائزة» : <span dir="ltr">أحمد | ذكر ، فاطمة | أنثى</span></p>
+  <textarea id="listeNoms" placeholder="أحمد، محمد، فاطمة..."></textarea>
+  <div style="margin-bottom:12px"><button style="background:#6f42c1" onclick="melangerListe()">🔀 خلط الترتيب عشوائيًا</button>
+    <button style="background:#0d9488" onclick="trierAlpha()">🔤 ترتيب أبجدي</button></div>
+  <div style="margin-bottom:12px;padding:10px;border:1px dashed #aaa;border-radius:6px;font-size:14px">
+    <div>📂 تحميل القائمة من ملف Excel / CSV (العمود الأول : الاسم، العمود الثاني اختياري : الجنس «ذكر» أو «أنثى»)</div>
+    <input type="file" id="fichierExcel" accept=".xlsx,.xls,.csv" style="margin-top:8px;max-width:100%">
+    <label style="display:block;margin-top:6px"><input type="checkbox" id="entete" checked> السطر الأول عنوان (يُتجاهل)</label>
+  </div>
+  <div style="margin-bottom:12px;padding:10px;border:1px dashed #aaa;border-radius:6px;font-size:14px">
+    🔢 مجال الأرقام (اختياري، عند إدخال أرقام) :<br>
+    <span style="display:inline-block;margin-top:6px">من
+    <input type="number" id="plageMin" style="width:80px;padding:4px;text-align:center">
+    إلى
+    <input type="number" id="plageMax" style="width:80px;padding:4px;text-align:center"></span>
+  </div>
+  <div style="margin-bottom:12px;font-size:14px">
+    ⏱️ مدة السحب :
+    <input type="number" id="duree" value="3" min="1" max="60" step="1" style="width:60px;padding:4px;text-align:center"> ثانية
+  </div>
+  <div>
+    <button onclick="verifierAvantTirage()">ابدأ السحب</button>
+    <button style="background:#fd7e14" onclick="finPrincipale()">🔒 نهاية الأساسية</button>
+    <button style="background:#20c997" onclick="tirerReserve()">🔁 الاحتياط</button>
+    <button class="sec" onclick="reinitialiser()">إعادة تعيين</button>
+    <button style="background:#6f42c1" onclick="ouvrirAffichage()">📺 عرض القائمة</button>
+    <button style="background:#17a2b8" onclick="ouvrirProces()">📄 محضر السحب</button>
+  </div>
+  <div class="boule" id="boule"><div class="bille"></div></div>
+  <div id="resultat"></div>
+  <div id="verif" style="margin-top:10px"></div>
+  <div id="phase" style="margin-top:10px;font-size:14px;color:#555"></div>
+  <div id="compteur" style="display:flex;gap:8px;margin-top:14px">
+    <div style="flex:1;background:#eef4ff;border-radius:8px;padding:8px 4px"><div id="cTotal" style="font-size:24px;font-weight:bold;color:#007bff">0</div><div style="font-size:12px;color:#555">المجموع</div></div>
+    <div style="flex:1;background:#eafaf0;border-radius:8px;padding:8px 4px"><div id="cRestants" style="font-size:24px;font-weight:bold;color:#28a745">0</div><div style="font-size:12px;color:#555">المتبقي</div></div>
+    <div style="flex:1;background:#fff4e5;border-radius:8px;padding:8px 4px"><div id="cTires" style="font-size:24px;font-weight:bold;color:#fd7e14">0</div><div style="font-size:12px;color:#555">المسحوب</div></div>
+  </div>
+  <h3 id="titreHisto" style="display:none">الفائزون السابقون</h3>
+  <ol id="historique"></ol>
+  <div style="margin-top:22px;padding-top:12px;border-top:1px solid #e3e3e3;font-size:13px;line-height:1.8;color:#555">
+    صُمِّم هذا التطبيق خصيصًا لإجراء عمليات القرعة بطريقة ذكية ودون محاباة، لضمان أعلى مستويات الشفافية ونفي أي شكوك.<br>
+    للاستفسار، يُرجى الاتصال على الرقم : <a href="tel:0773632757" dir="ltr" style="color:#007bff;font-weight:bold;text-decoration:none">0773632757</a>
+  </div>
+</div>
+
+<div class="aff" id="affichage">
+  <div class="aff-barre">
+    <span id="affTitre"></span>
+    <span>
+      <button onclick="tailleAff(4)">A+</button>
+      <button onclick="tailleAff(-4)">A−</button>
+      <button class="sec" onclick="fermerAffichage()">✕ إغلاق</button>
+    </span>
+  </div>
+  <div class="aff-legende" id="affLegende" style="display:none">🔴 الأحمر = اسم مكرر (حتى لو عُكس الاسم واللقب) أو رقم مكرر، أو رقم خارج المجال</div>
+  <ol id="affListe"></ol>
+</div>
+
+<div class="pv" id="proces">
+  <div class="pv-barre">
+    <div style="width:100%;display:flex;gap:6px;flex-wrap:wrap">
+      <input type="text" id="ent1" placeholder="رأس المحضر - السطر 1 (اسم المؤسسة)" style="flex:1;min-width:200px;padding:5px">
+      <input type="text" id="ent2" placeholder="السطر 2" style="flex:1;min-width:200px;padding:5px">
+      <input type="text" id="ent3" placeholder="السطر 3" style="flex:1;min-width:200px;padding:5px">
+    </div>
+    <div style="width:100%;display:flex;gap:6px;flex-wrap:wrap">
+      <input type="text" id="agencePv" placeholder="اسم الوكالة" style="flex:1;min-width:140px;padding:5px">
+      <input type="text" id="datePv" placeholder="اليوم والتاريخ والسنة" style="flex:2;min-width:220px;padding:5px">
+      <input type="text" id="heurePv" placeholder="الساعة" style="flex:1;min-width:90px;padding:5px">
+      <input type="text" id="typePv" placeholder="نوع القرعة (يُدخل يدويًا)" style="flex:2;min-width:220px;padding:5px">
+    </div>
+    <span>عدد الفائزين الأساسيين : <input type="number" id="nbPrincipaux" min="0" placeholder="تلقائي"> (الباقي = قائمة الاحتياط)</span>
+    <span>
+      <button style="background:#28a745" onclick="window.print()">🖨️ طباعة</button>
+      <button class="sec" onclick="fermerProces()">✕ إغلاق</button>
+    </span>
+  </div>
+  <div class="pv-zone"><div id="procesPage"></div></div>
+</div>
+
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+  let gagnants = [];
+  let sexes = {}; // الاسم المُوحَّد ← 'M' (ذكر) أو 'F' (أنثى)
+  let enCours = false;
+  let finPrincipaux = null; // nombre de gagnants principaux une fois la liste clôturée
+  let mode = 'principal';
+
+  function lireParticipants() {
+    return [...new Set(lireBrut())]; // حذف المكرر
+  }
+
+  function majAffichage() {
+    const participants = lireParticipants();
+    const restants = participants.filter(n => !gagnants.includes(n));
+    document.getElementById('cTotal').textContent = restants.length + gagnants.length;
+    document.getElementById('cRestants').textContent = restants.length;
+    document.getElementById('cTires').textContent = gagnants.length;
+    const ol = document.getElementById('historique');
+    ol.innerHTML = '';
+    gagnants.forEach((g, i) => {
+      const li = document.createElement('li');
+      if (finPrincipaux !== null && i >= finPrincipaux) {
+        li.textContent = `احتياط ${i - finPrincipaux + 1}. ${g}`;
+        li.style.color = '#fd7e14';
+      } else {
+        li.textContent = `${i + 1}. ${g}`;
+      }
+      ol.appendChild(li);
+    });
+    document.getElementById('phase').textContent = finPrincipaux === null
+      ? 'المرحلة الحالية : الفائزون الأساسيون'
+      : `القائمة الأساسية مغلقة (${finPrincipaux}) — المرحلة الحالية : الاحتياط`;
+    document.getElementById('titreHisto').style.display = gagnants.length ? 'block' : 'none';
+  }
+
+  let enVerif = false;
+
+  function enNombre(s) {
+    const t = normaliser(s).replace(/\s/g, '');
+    return /^-?\d+(\.\d+)?$/.test(t) ? Number(t) : null;
+  }
+
+  function lirePlage() {
+    const a = document.getElementById('plageMin').value.trim();
+    const b = document.getElementById('plageMax').value.trim();
+    const min = a === '' ? null : Number(a);
+    const max = b === '' ? null : Number(b);
+    if (min !== null && max !== null && min > max) {
+      return { min, max, erreur: 'المجال غير صحيح : القيمة «من» أكبر من «إلى»' };
+    }
+    return { min, max, erreur: null };
+  }
+
+  ['plageMin', 'plageMax'].forEach(id =>
+    document.getElementById(id).addEventListener('input', function () { cacherVerif(); })
+  );
+
+  // الجنس : ذكر / أنثى
+  function lireSexe(v) {
+    const k = String(v).trim().toLowerCase().replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
+    if (/^(ذكر|ذ|رجل|m|h)$/.test(k)) return 'M';
+    if (/^(انثي|ان|امراه|مراه|f|ا)$/.test(k)) return 'F';
+    return '';
+  }
+
+  // يقرأ الأسماء، ويقبل جنسًا اختياريًا بعد الاسم : أحمد | ذكر ، فاطمة | أنثى
+  function lireBrut() {
+    const out = [];
+    document.getElementById('listeNoms').value.split(/[\n,،;؛]/).forEach(raw => {
+      let n = raw.trim();
+      if (!n) return;
+      const m = n.match(/^(.*?)\s*[|:：]\s*([^|:：]+)$/);
+      if (m && lireSexe(m[2]) && m[1].trim()) { n = m[1].trim(); sexes[normaliser(n)] = lireSexe(m[2]); }
+      out.push(n);
+    });
+    return out;
+  }
+
+  function normaliser(s) {
+    return s.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+            .replace(/\s+/g, ' ').toLowerCase();
+  }
+
+  // مفتاح كشف التكرار : يتجاهل ترتيب الكلمات (محمد رضا = رضا محمد) والهمزات والتشكيل
+  function cleDoublon(s) {
+    return normaliser(String(s))
+      .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+      .replace(/[\u064B-\u0652\u0640]/g, '')
+      .split(' ').filter(Boolean).sort().join(' ');
+  }
+
+  function cacherVerif() {
+    document.getElementById('verif').innerHTML = '';
+  }
+
+  // نافذة قبل بدء السحب : عبارة العدالة وقائمة المترشحين
+  function afficherAvantTirage(go) {
+    const noms = lireParticipants().filter(n => !gagnants.includes(n));
+    const o = document.createElement('div');
+    o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:99999;padding:12px';
+    const b = document.createElement('div');
+    b.style.cssText = 'background:#fff;color:#000;border-radius:10px;padding:16px;max-width:520px;width:100%;direction:rtl;text-align:right;max-height:92vh;overflow:auto;line-height:1.9;font-size:16px';
+    const h = document.createElement('div');
+    h.style.cssText = 'white-space:pre-line;margin-bottom:10px';
+    h.textContent = '🤝 السحب يتم بطريقة عادلة : كل المترشحين لهم نفس الحظوظ، ويُختار الفائز بخوارزمية عشوائية آمنة لا تتأثر بترتيب الأسماء ولا بالتوقيت.\n' +
+      '🚫 لا يُسمح بتكرار نفس المترشح أكثر من مرة : تم التحقق من القائمة ولا يوجد اسم أو رقم مكرر (حتى لو عُكس الاسم واللقب)، والفائز يخرج من القائمة فلا يُسحب مرتين.';
+    b.appendChild(h);
+    const titre = document.createElement('div');
+    titre.style.cssText = 'font-weight:bold;color:#0b3d91;border-bottom:2px solid #cfe0ff;margin-bottom:6px';
+    titre.textContent = '📋 قائمة المترشحين (' + noms.length + ')';
+    b.appendChild(titre);
+    const ol = document.createElement('ol');
+    ol.style.cssText = 'margin:0 0 12px;padding-right:28px;max-height:45vh;overflow:auto';
+    noms.forEach(n => { const li = document.createElement('li'); li.textContent = n; ol.appendChild(li); });
+    b.appendChild(ol);
+    const bt = (lib, fn, bg) => {
+      const x = document.createElement('button');
+      x.textContent = lib; x.style.cssText = 'margin:4px;padding:10px 18px;font-size:16px;' + (bg ? 'background:' + bg + ';color:#fff' : '');
+      x.onclick = () => { o.remove(); fn(); };
+      b.appendChild(x);
+    };
+    bt('▶️ واصل', go, '#28a745');
+    bt('✕ إلغاء', () => {});
+    o.appendChild(b);
+    document.body.appendChild(o);
+  }
+
+  function verifierAvantTirage() {
+    if (enCours || enVerif) return;
+    if (finPrincipaux !== null) {
+      const r = document.getElementById('resultat');
+      r.style.whiteSpace = 'normal';
+      r.style.color = '#dc3545';
+      r.textContent = 'القائمة الأساسية مغلقة. استعمل زر «الاحتياط» لسحب الاحتياطيين.';
+      return;
+    }
+    const res = document.getElementById('resultat');
+    const zone = document.getElementById('verif');
+    const brut = lireBrut();
+    zone.innerHTML = '';
+    res.style.whiteSpace = 'pre-line';
+
+    if (brut.length === 0) {
+      res.style.color = 'red';
+      res.textContent = gagnants.length ? 'تم سحب جميع المشاركين. اضغط على «إعادة تعيين».' : 'الرجاء إدخال مشارك واحد على الأقل !';
+      return;
+    }
+
+    enVerif = true;
+    res.style.color = '#6c757d';
+    res.textContent = '⏳ لحظة، أتأكد من عدم وجود اسم أو رقم مكرر...';
+
+    setTimeout(function () {
+      enVerif = false;
+      const vus = new Map();
+      brut.forEach(n => {
+        const k = cleDoublon(n);
+        const e = vus.get(k) || { noms: [], c: 0 };
+        e.c++;
+        if (!e.noms.some(x => normaliser(x) === normaliser(n))) e.noms.push(n);
+        vus.set(k, e);
+      });
+      const doublons = [...vus.values()].filter(e => e.c > 1);
+
+      const msgs = doublons.map(d => d.noms.length > 1
+        ? `لقد وجدت الاسم « ${d.noms.join(' » و « ')} » مكرر (نفس الشخص بترتيب مختلف للاسم واللقب)`
+        : `لقد وجدت الاسم أو الرقم « ${d.noms[0]} » مكرر (${d.c} مرات)`);
+
+      const plage = lirePlage();
+      if (plage.erreur) {
+        msgs.push(plage.erreur);
+      } else if (plage.min !== null || plage.max !== null) {
+        const deja = new Set();
+        brut.forEach(n => {
+          const v = enNombre(n);
+          if (v === null || deja.has(v)) return;
+          if ((plage.min !== null && v < plage.min) || (plage.max !== null && v > plage.max)) {
+            deja.add(v);
+            msgs.push(`الرقم « ${n} » خارج المجال (من ${plage.min !== null ? plage.min : '…'} إلى ${plage.max !== null ? plage.max : '…'})`);
+          }
+        });
+      }
+
+      if (msgs.length > 0) {
+        res.style.color = '#dc3545';
+        res.textContent = '⚠️ ' + msgs.join('\n') + '\nالرجاء التصحيح قبل أن نكمل.';
+      } else {
+        res.style.color = '#28a745';
+        res.textContent = '✅ لا يوجد تكرار. اضغط على الزر «واصل».';
+        const go = function () { cacherVerif(); res.style.whiteSpace = 'normal'; mode = 'principal'; tirerAuSort(); };
+        const b = document.createElement('button');
+        b.textContent = 'واصل';
+        b.onclick = function () { afficherAvantTirage(go); };
+        zone.appendChild(b);
+        afficherAvantTirage(go);
+      }
+    }, 1200);
+  }
+
+  let taillePx = 28;
+
+  function tailleAff(d) {
+    taillePx = Math.max(14, Math.min(80, taillePx + d));
+    document.getElementById('affListe').style.fontSize = taillePx + 'px';
+  }
+
+  function ouvrirAffichage() {
+    const brut = lireBrut();
+    const res = document.getElementById('resultat');
+    if (brut.length === 0) {
+      res.style.whiteSpace = 'normal';
+      res.style.color = 'red';
+      res.textContent = 'الرجاء إدخال مشارك واحد على الأقل !';
+      return;
+    }
+    const comptes = new Map();
+    brut.forEach(n => { const k = cleDoublon(n); comptes.set(k, (comptes.get(k) || 0) + 1); });
+    const plage = lirePlage();
+    let nbErr = 0;
+    const ol = document.getElementById('affListe');
+    ol.innerHTML = '';
+    brut.forEach(n => {
+      const li = document.createElement('li');
+      li.textContent = n;
+      let err = comptes.get(cleDoublon(n)) > 1;
+      const v = enNombre(n);
+      if (v !== null && !plage.erreur && ((plage.min !== null && v < plage.min) || (plage.max !== null && v > plage.max))) err = true;
+      if (err) { li.className = 'err'; nbErr++; }
+      ol.appendChild(li);
+    });
+    document.getElementById('affTitre').textContent = `قائمة المشاركين (${brut.length})`;
+    document.getElementById('affLegende').style.display = nbErr ? 'block' : 'none';
+    ol.style.fontSize = taillePx + 'px';
+    const el = document.getElementById('affichage');
+    el.style.display = 'flex';
+    if (el.requestFullscreen) el.requestFullscreen().catch(function () {});
+  }
+
+  function fermerAffichage() {
+    document.getElementById('affichage').style.display = 'none';
+    if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen();
+  }
+
+  document.addEventListener('fullscreenchange', function () {
+    if (!document.fullscreenElement) document.getElementById('affichage').style.display = 'none';
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') fermerAffichage();
+  });
+
+  function esc(t) {
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function rendreProces() {
+    const v = document.getElementById('nbPrincipaux').value.trim();
+    let n = v === '' ? (finPrincipaux !== null ? finPrincipaux : gagnants.length) : Math.max(0, Math.min(gagnants.length, parseInt(v, 10) || 0));
+    const principaux = gagnants.slice(0, n);
+    const reserve = gagnants.slice(n);
+
+    const lignes = (liste, minimum) => {
+      let h = '';
+      const total = Math.max(liste.length, minimum);
+      for (let i = 0; i < total; i++) {
+        h += `<tr><td style="width:70px">${i + 1}</td><td class="nom">${i < liste.length ? esc(liste[i]) : '&nbsp;'}</td></tr>`;
+      }
+      return h;
+    };
+    const tete = '<tr><th style="width:70px">الرقم</th><th>الاسم واللقب</th></tr>';
+    const pts = '........';
+    const entetes = [1, 2, 3].map(i => document.getElementById('ent' + i).value.trim());
+    const dateTxt = document.getElementById('datePv').value.trim() || pts;
+    const heureTxt = document.getElementById('heurePv').value.trim() || pts;
+    const typeTxt = document.getElementById('typePv').value.trim() || pts;
+    const agenceTxt = document.getElementById('agencePv').value.trim() || pts;
+
+    document.getElementById('procesPage').innerHTML = `
+      <div style="text-align:center;font-weight:bold;line-height:1.8">${entetes.map(t => `<div>${t ? esc(t) : '&nbsp;'}</div>`).join('')}</div>
+      <div style="height:3em"></div>
+      <h2>محضر قرعة</h2>
+      <p>في يوم ${esc(dateTxt)} على الساعة ${esc(heureTxt)} ، قامت اللجنة المشتركة لوكالة ${esc(agenceTxt)}
+      بإجراء عملية قرعة ${esc(typeTxt)} .</p>
+      <p>وقد أسفرت عملية القرعة على أسماء الفائزين كما يلي :</p>
+      <div class="sous-titre">الأساسيين</div>
+      <table>${tete}${lignes(principaux, 3)}</table>
+      <div class="sous-titre">الاحتياط</div>
+      <table>${tete}${lignes(reserve, 3)}</table>
+      <div class="signatures">إمضاء أعضاء اللجنة المشتركة</div>
+      <div style="height:6em"></div>`;
+  }
+
+  function ouvrirProces() {
+    if (gagnants.length === 0) {
+      const res = document.getElementById('resultat');
+      res.style.whiteSpace = 'normal';
+      res.style.color = 'red';
+      res.textContent = 'لم يتم أي سحب بعد، أجرِ السحب أولًا ثم اطبع المحضر.';
+      return;
+    }
+    const maintenant = new Date();
+    const dEl = document.getElementById('datePv');
+    const hEl = document.getElementById('heurePv');
+    if (dEl.value.trim() === '') {
+      dEl.value = maintenant.toLocaleDateString('ar-DZ-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    if (hEl.value.trim() === '') {
+      hEl.value = maintenant.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+    rendreProces();
+    document.getElementById('proces').style.display = 'flex';
+  }
+
+  function fermerProces() {
+    document.getElementById('proces').style.display = 'none';
+  }
+
+  document.getElementById('nbPrincipaux').addEventListener('input', rendreProces);
+  // Le nom de l'agence est mémorisé dans le navigateur (chaque agence garde le sien)
+  (function () {
+    const el = document.getElementById('agencePv');
+    try { el.value = localStorage.getItem('tirage_agence') || ''; } catch (e) {}
+    el.addEventListener('input', function () {
+      try { localStorage.setItem('tirage_agence', el.value); } catch (e) {}
+      rendreProces();
+    });
+  })();
+  ['datePv', 'heurePv', 'typePv'].forEach(id =>
+    document.getElementById(id).addEventListener('input', rendreProces));
+
+  // Les 3 lignes d'en-tête sont mémorisées dans le navigateur pour la prochaine fois
+  [1, 2, 3].forEach(i => {
+    const el = document.getElementById('ent' + i);
+    try { el.value = localStorage.getItem('tirage_entete' + i) || ''; } catch (e) {}
+    el.addEventListener('input', function () {
+      try { localStorage.setItem('tirage_entete' + i, el.value); } catch (e) {}
+      rendreProces();
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') fermerProces();
+  });
+
+  function finPrincipale() {
+    if (enCours || enVerif) return;
+    const res = document.getElementById('resultat');
+    res.style.whiteSpace = 'normal';
+    if (finPrincipaux !== null) {
+      res.style.color = '#dc3545';
+      res.textContent = 'القائمة الأساسية مغلقة من قبل.';
+      return;
+    }
+    if (gagnants.length === 0) {
+      res.style.color = '#dc3545';
+      res.textContent = 'لم يُسحب أي فائز أساسي بعد.';
+      return;
+    }
+    if (!confirm(`إنهاء القائمة الأساسية عند ${gagnants.length} فائز ؟\nلن يمكن إضافة فائزين أساسيين بعد ذلك، وسيكون السحب القادم للاحتياط.`)) return;
+    finPrincipaux = gagnants.length;
+    res.style.color = '#fd7e14';
+    res.textContent = `🔒 تم إنهاء القائمة الأساسية (${finPrincipaux}). اضغط «الاحتياط» لسحب الاحتياطيين.`;
+    majAffichage();
+  }
+
+  function tirerReserve() {
+    if (enCours || enVerif) return;
+    const res = document.getElementById('resultat');
+    res.style.whiteSpace = 'normal';
+    if (finPrincipaux === null) {
+      if (gagnants.length === 0) {
+        res.style.color = '#dc3545';
+        res.textContent = 'اسحب الفائزين الأساسيين أولًا.';
+        return;
+      }
+      if (!confirm(`القائمة الأساسية لم تُغلق بعد. إنهاؤها عند ${gagnants.length} فائز والمتابعة إلى الاحتياط ؟`)) return;
+      finPrincipaux = gagnants.length;
+    }
+    cacherVerif();
+    mode = 'reserve';
+    tirerAuSort();
+  }
+
+  // Nombre aléatoire sécurisé (crypto) sans biais, entre 0 et n-1
+  function entierSecurise(n) {
+    const max = 4294967296;
+    const limite = max - (max % n);
+    const t = new Uint32Array(1);
+    do { crypto.getRandomValues(t); } while (t[0] >= limite);
+    return t[0] % n;
+  }
+
+  // Mélange de Fisher-Yates : l'ordre initial n'a aucune influence
+  function melanger(liste) {
+    const a = liste.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = entierSecurise(i + 1);
+      const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function melangerListe() {
+    if (enCours || enVerif) return;
+    const res = document.getElementById('resultat');
+    res.style.whiteSpace = 'normal';
+    const noms = lireBrut();
+    if (noms.length < 2) {
+      res.style.color = '#dc3545';
+      res.textContent = 'أدخل اسمين على الأقل لخلط الترتيب.';
+      return;
+    }
+    document.getElementById('listeNoms').value = melanger(noms).join('\n');
+    cacherVerif();
+    majAffichage();
+    res.style.color = '#6f42c1';
+    res.textContent = '🔀 تم خلط ترتيب القائمة عشوائيًا.';
+  }
+
+  function trierAlpha() {
+    if (enCours || enVerif) return;
+    const res = document.getElementById('resultat');
+    res.style.whiteSpace = 'normal';
+    const noms = lireBrut();
+    if (noms.length < 2) {
+      res.style.color = '#dc3545';
+      res.textContent = 'أدخل اسمين على الأقل للترتيب.';
+      return;
+    }
+    const cle = n => n.replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[\u064B-\u0652\u0640]/g, '');
+    noms.sort((a, b) => cle(a).localeCompare(cle(b), 'ar', { numeric: true, sensitivity: 'base' }));
+    document.getElementById('listeNoms').value = noms.join('\n');
+    cacherVerif();
+    majAffichage();
+    res.style.color = '#0d9488';
+    res.textContent = '🔤 تم ترتيب القائمة أبجديًا (الاسم واللقب).';
+  }
+
+  function tirerAuSort() {
+    const res = document.getElementById('resultat');
+    const participants = lireParticipants();
+
+    if (participants.length === 0) {
+      res.style.color = 'red';
+      res.textContent = gagnants.length ? 'تم سحب جميع المشاركين. اضغط على «إعادة تعيين».' : 'الرجاء إدخال مشارك واحد على الأقل !';
+      return;
+    }
+    const restants = participants.filter(n => !gagnants.includes(n));
+    if (restants.length === 0) {
+      res.style.color = '#dc3545';
+      res.textContent = 'تم سحب جميع المشاركين. اضغط على «إعادة تعيين».';
+      majAffichage();
+      return;
+    }
+    if (enCours) return;
+    enCours = true;
+    const boule = document.getElementById('boule');
+    boule.style.display = 'block';
+    const melange = melanger(restants); // l'ordre de saisie est ignoré
+    const gagnant = melange[entierSecurise(melange.length)];
+    let secondes = parseFloat(document.getElementById('duree').value);
+    if (isNaN(secondes) || secondes < 1) secondes = 1;
+    if (secondes > 60) secondes = 60;
+    document.getElementById('duree').value = secondes;
+    const dureeMs = secondes * 1000;
+    let debut = Date.now();
+    res.style.color = '#6c757d';
+
+    function tourner() {
+      const ecoule = Date.now() - debut;
+      if (ecoule < dureeMs) {
+        res.textContent = '🎲 ' + restants[Math.floor(Math.random() * restants.length)];
+        const p = ecoule / dureeMs;
+        setTimeout(tourner, 50 + 300 * p * p); // يتباطأ في النهاية
+      } else {
+        gagnants.push(gagnant);
+        document.getElementById('listeNoms').value = lireBrut().filter(n => n !== gagnant).join('\n');
+        res.style.color = '#28a745';
+        const fem = sexes[normaliser(gagnant)] === 'F';
+        res.textContent = (mode === 'reserve')
+          ? `🔁 ${fem ? 'الاحتياطية' : 'الاحتياطي'} رقم ${gagnants.length - finPrincipaux} : ${gagnant}`
+          : (fem ? `🎉 الفائزة هي : ${gagnant} !` : `🎉 الفائز هو : ${gagnant} !`);
+        boule.style.display = 'none';
+        enCours = false;
+        majAffichage();
+      }
+    }
+    res.textContent = '🔀 جارٍ خلط ترتيب الأسماء ...';
+    setTimeout(function () { debut = Date.now(); tourner(); }, 1000);
+  }
+
+  function reinitialiser() {
+    if (enCours) return;
+    cacherVerif();
+    const reste = lireBrut();
+    document.getElementById('listeNoms').value = reste.concat(gagnants.filter(g => !reste.includes(g))).join('\n');
+    gagnants = [];
+    finPrincipaux = null;
+    mode = 'principal';
+    document.getElementById('resultat').textContent = '';
+    majAffichage();
+  }
+
+  document.getElementById('listeNoms').addEventListener('input', function () {
+    cacherVerif(); // la liste a changé : il faut revérifier
+    majAffichage();
+  });
+
+  // ==== قراءة الملفات (دون إنترنت) ====
+  const decXml = t => t.replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(+d))
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+  const textesT = x => { let o = ''; x.replace(/<t\b[^>]*>([\s\S]*?)<\/t>/g, (_, v) => { o += v; }); return decXml(o); };
+  const attr = (tag, nom) => { const m = tag.match(new RegExp('\\b' + nom + '="([^"]*)"')); return m ? m[1] : ''; };
+  async function inflate(u8) {
+    const st = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(st).arrayBuffer());
+  }
+  async function zipEntries(buf) {
+    const u = new Uint8Array(buf), dv = new DataView(buf), out = {};
+    let e = u.length - 22;
+    while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+    if (e < 0) throw new Error('ملف Excel غير صالح');
+    const nb = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+    const td = new TextDecoder();
+    for (let i = 0; i < nb; i++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) break;
+      const meth = dv.getUint16(p + 10, true), csz = dv.getUint32(p + 20, true);
+      const ln = dv.getUint16(p + 28, true), le = dv.getUint16(p + 30, true), lc = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+      const nom = td.decode(u.subarray(p + 46, p + 46 + ln));
+      out[nom] = { meth, csz, off };
+      p += 46 + ln + le + lc;
+    }
+    const lire = async nom => {
+      const en = out[nom]; if (!en) return null;
+      const ln = dv.getUint16(en.off + 26, true), le = dv.getUint16(en.off + 28, true), d0 = en.off + 30 + ln + le;
+      const data = u.subarray(d0, d0 + en.csz);
+      return td.decode(en.meth === 0 ? data : await inflate(data));
+    };
+    return { noms: Object.keys(out), lire };
+  }
+  async function lireXlsx(buf) {
+    const z = await zipEntries(buf);
+    let feuille = 'xl/worksheets/sheet1.xml';
+    try {
+      const wb = await z.lire('xl/workbook.xml'), rel = await z.lire('xl/_rels/workbook.xml.rels');
+      const sh = wb.match(/<sheet\b[^>]*>/); const rid = sh ? attr(sh[0], 'r:id') : '';
+      (rel.match(/<Relationship\b[^>]*>/g) || []).forEach(t => {
+        if (attr(t, 'Id') === rid) { let tg = attr(t, 'Target'); tg = tg.replace(/^\//, ''); feuille = tg.startsWith('xl/') ? tg : 'xl/' + tg; }
+      });
+    } catch (e) {}
+    if (!z.noms.includes(feuille)) feuille = z.noms.filter(n => /^xl\/worksheets\/sheet\d*\.xml$/.test(n)).sort()[0];
+    if (!feuille) throw new Error('لم يُعثر على ورقة بيانات في الملف');
+    const ss = [], sx = await z.lire('xl/sharedStrings.xml');
+    if (sx) (sx.match(/<si\b[^>]*\/>|<si\b[^>]*>[\s\S]*?<\/si>/g) || []).forEach(si => ss.push(textesT(si.replace(/<rPh\b[\s\S]*?<\/rPh>/g, ''))));
+    const xml = await z.lire(feuille), rows = [];
+    (xml.match(/<row\b[^>]*>[\s\S]*?<\/row>/g) || []).forEach((rw, ri) => {
+      const rt = rw.match(/<row\b[^>]*>/)[0], rn = parseInt(attr(rt, 'r'), 10) || (ri + 1);
+      const ligne = [];
+      (rw.match(/<c\b[^>]*?\/>|<c\b[^>]*?>[\s\S]*?<\/c>/g) || []).forEach(c => {
+        const tg = c.match(/<c\b[^>]*>/)[0], ref = attr(tg, 'r'), t = attr(tg, 't');
+        const col = ref.replace(/\d+/g, '').split('').reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+        let v = '';
+        if (t === 'inlineStr') v = textesT(c);
+        else { const m = c.match(/<v>([\s\S]*?)<\/v>/); if (m) v = t === 's' ? (ss[+m[1]] || '') : decXml(m[1]); }
+        if (col >= 0) ligne[col] = v;
+      });
+      while (rows.length < rn - 1) rows.push([]);
+      rows[rn - 1] = Array.from(ligne, x => x === undefined ? '' : x);
+    });
+    return rows;
+  }
+  function lireCsv(buf) {
+    let t;
+    try { t = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { t = new TextDecoder('windows-1256').decode(buf); }
+    t = t.replace(/^\uFEFF/, '');
+    const l1 = t.split(/\r?\n/)[0] || '';
+    const sep = [';', '\t', ','].map(c => [c, l1.split(c).length]).sort((a, b) => b[1] - a[1])[0][0];
+    const rows = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < t.length; i++) {
+      const ch = t[i];
+      if (q) { if (ch === '"') { if (t[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === sep) { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+      else cur += ch;
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+  async function lireFichier(buf, nom) {
+    const u = new Uint8Array(buf);
+    if (u[0] === 0x50 && u[1] === 0x4B) return lireXlsx(buf);              // xlsx (zip)
+    if (u[0] === 0xD0 && u[1] === 0xCF) {                                   // xls قديم
+      if (typeof XLSX === 'undefined') throw new Error('صيغة xls القديمة غير مدعومة دون إنترنت. احفظ الملف بصيغة xlsx أو csv ثم أعد التحميل.');
+      const wb = XLSX.read(buf, { type: 'array' });
+      return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+    }
+    return lireCsv(buf);
+  }
+  // ==== نهاية قراءة الملفات ====
+
+  document.getElementById('fichierExcel').addEventListener('change', function (e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const res = document.getElementById('resultat');
+    const lecteur = new FileReader();
+    lecteur.onload = async function (ev) {
+      try {
+        let lignes = await lireFichier(ev.target.result, f.name);
+        if (document.getElementById('entete').checked) lignes = lignes.slice(1);
+        sexes = {};
+        const noms = [];
+        lignes.forEach(l => {
+          const n = String(l[0] === undefined ? '' : l[0]).trim();
+          if (!n) return;
+          noms.push(n);
+          const sx = lireSexe(l[1] === undefined ? '' : l[1]);
+          if (sx) sexes[normaliser(n)] = sx;
+        });
+        document.getElementById('listeNoms').value = noms.join('\n');
+        gagnants = [];
+        finPrincipaux = null;
+        mode = 'principal';
+        cacherVerif();
+        res.style.whiteSpace = 'normal';
+        res.style.color = '#007bff';
+        res.textContent = `تم تحميل ${noms.length} اسم من « ${f.name} »`;
+        majAffichage();
+      } catch (err) {
+        res.style.color = 'red';
+        res.textContent = 'خطأ في القراءة : ' + err.message;
+      }
+    };
+    lecteur.readAsArrayBuffer(f);
+    e.target.value = '';
+  });
+</script>
+</body>
+</html>
