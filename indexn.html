@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>تطبيق متابعة الانتخابات المحلية ليوم 28 نوفمبر 2026</title>
+<style>
+:root{--navy:#17324d;--blue:#1f6f8b;--bg:#f2f5f8;--card:#fff;--line:#dce3e9;--text:#182230;--muted:#667085;--green:#16835b;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text)}button,input,select{font:inherit}button{border:0;border-radius:9px;padding:10px 13px;background:var(--blue);color:#fff;font-weight:bold;cursor:pointer}button.secondary{background:#667085}button.green{background:var(--green)}button.red{background:var(--red)}button.light{background:#e8eef3;color:var(--navy)}header{background:var(--navy);color:white;padding:16px;text-align:center}header h1{margin:0 0 7px;font-size:21px}header p{margin:0;font-size:14px;opacity:.9}.topnav{display:flex;gap:7px;flex-wrap:wrap;padding:10px;background:white;position:static;box-shadow:0 2px 5px #0001}.wrap{max-width:1100px;margin:auto;padding:12px}.card{background:var(--card);border-radius:13px;padding:15px;margin-bottom:12px;box-shadow:0 2px 7px #1522380d}.card h2{margin:0 0 12px;font-size:19px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.stat{background:#edf4f8;border-radius:10px;padding:12px;text-align:center}.stat span{display:block;font-size:13px;color:var(--muted)}.stat strong{display:block;font-size:25px;margin-top:5px}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:end}.field{flex:1;min-width:145px}label{display:block;font-weight:bold;font-size:13px;margin-bottom:5px}input,select{width:100%;padding:10px;border:1px solid #cbd5df;border-radius:8px;background:white;color:var(--text)}.hint{color:var(--muted);font-size:13px;line-height:1.7}.notice{background:#fff6d9;border-right:4px solid #d6a100;padding:10px;border-radius:8px;margin:10px 0;line-height:1.6}.hidden{display:none!important}.tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:540px;margin-top:8px}th,td{border-bottom:1px solid var(--line);padding:9px;text-align:right;font-size:13px}th{background:#f4f6f8}.pill{display:inline-block;background:#e7f5ec;color:#16653f;border-radius:15px;padding:4px 8px;font-size:12px}.pill.gray{background:#eef0f3;color:#4b5563}.officeitem{border:1px solid var(--line);border-radius:10px;padding:12px;margin:8px 0;background:#fff}.officeitem h3{font-size:16px;margin:0 0 6px}.officeitem p{font-size:13px;color:var(--muted);margin:4px 0 10px}.lineinput{display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:center;margin:8px 0}.lineinput input{max-width:140px}.backbar{display:none}.page{display:none!important;visibility:hidden!important;opacity:0!important;height:0!important;overflow:hidden!important}.page.active{display:block!important;visibility:visible!important;opacity:1!important;height:auto!important;overflow:visible!important}.page[hidden]{display:none!important;visibility:hidden!important;opacity:0!important;height:0!important;overflow:hidden!important}.foot{text-align:center;color:var(--muted);font-size:12px;padding:16px}.dangertext{color:var(--red)}@media(max-width:650px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.topnav button{flex:1 1 28%;padding:8px 2px;font-size:13px}header h1{font-size:18px}.wrap{padding:8px}.card{padding:12px}.lineinput{grid-template-columns:1fr 100px}}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{padding-bottom:84px}
+html,body{max-width:100%;overflow-x:hidden}
+.hint,.notice,.officeitem p,.officeitem h3,.stat span{overflow-wrap:anywhere}
+td,th{overflow-wrap:normal;word-break:normal}
+.card{overflow-x:auto}
+.topnav{position:relative;z-index:5}
+@media(max-width:650px){
+table{width:max-content;min-width:100%;font-size:12px}
+th,td{padding:8px 10px;font-size:12px;white-space:nowrap}
+.stat strong{font-size:21px}.stat span{font-size:12px}
+.card h2{font-size:17px}.row{gap:6px}.field{min-width:120px}
+.topnav button{min-width:0}
+select,input{font-size:15px;min-width:0}
+}
+</style>
+</head>
+<body>
+<div id="loginScreen" style="position:fixed;inset:0;background:var(--bg);z-index:100;overflow:auto;display:none">
+<header><h1>تطبيق متابعة الانتخابات المحلية ليوم 28 نوفمبر 2026</h1><p>تسجيل الدخول</p></header>
+<div class="wrap" style="max-width:460px">
+<div class="card"><h2>الدخول إلى حسابك</h2>
+<div class="field" style="margin-bottom:10px"><label>اسم المستخدم</label><input id="loginUser" autocomplete="username" autocapitalize="off" onkeydown="if(event.key==='Enter')$('loginPin').focus()"></div>
+<div class="field" style="margin-bottom:10px"><label>الرمز السري</label><input id="loginPin" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+<div id="loginMsg" class="notice" style="display:none"></div>
+<button onclick="doLogin()">دخول</button>
+<p class="hint" id="loginHint"></p>
+<p class="hint"><a href="#" onclick="resetAdminPin();return false" style="color:#1f6f8b">نسيت رمز المدير؟ إعادة ضبطه (admin / 1234)</a></p></div>
+<div class="card"><h3 style="margin:0 0 6px">أول استعمال على هاتف مفوض؟</h3>
+<p class="hint">استورد ملف الإعداد الذي أرسله لك المدير العام عبر واتساب (ملف بامتداد mfwcfg.json)، ثم ادخل باسم المستخدم والرمز السري الخاصين بك.</p>
+<input type="file" id="cfgFile" accept=".json,.txt" onchange="importConfigFile(this)"><p class="hint" style="margin-top:10px">أو الصق نص الإعداد الذي بدأ بـ MFWCFG هنا:</p>
+<textarea id="cfgText" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5df;border-radius:8px;font:inherit;direction:ltr"></textarea>
+<button style="margin-top:8px" onclick="importConfigText()">استيراد النص</button></div>
+</div></div>
+<header>
+<h1>تطبيق متابعة الانتخابات المحلية ليوم 28 نوفمبر 2026</h1>
+<p>الدائرة: الڨرارم ڨوقة | البلدية: الڨرارم ڨوقة</p>
+<p style="font-size:11px;opacity:.7;margin-top:4px">الإصدار v17.3</p>
+</header>
+<div id="navBar" style="padding:8px 10px;background:#fff;box-shadow:0 2px 5px #0001"><button style="width:100%" onclick="toggleNav()">☰ القائمة</button></div>
+<div class="topnav" id="nav" style="display:none">
+<button class="adm" onclick="window._navOpen=false;showPage('dashboard')">لوحة القيادة</button>
+<button class="adm" onclick="showPage('setup')">المراكز والمكاتب</button>
+<button class="adm" onclick="showPage('assign')">توزيع المفوضين</button>
+<button class="adm" onclick="showPage('lists')">القوائم</button>
+<button onclick="showPage('results')">إدخال النتائج</button>
+<button class="dlg green" onclick="showPage('send')">إرسال النتائج للمدير</button>
+<button class="adm green" onclick="showPage('receive')">استلام النتائج</button>
+<button class="adm" onclick="showPage('accounts')">الحسابات</button>
+<button class="secondary" onclick="logout()">خروج</button>
+</div>
+<main class="wrap">
+<div id="backBar" class="backbar" style="display:none;margin-bottom:10px"><button class="secondary" onclick="showHome()">↩ العودة إلى القائمة الرئيسية</button></div>
+<section id="dashboard" class="page active">
+<div id="delegateDash" style="display:none"></div>
+<div id="adminDash">
+<div id="adminAlerts"></div>
+<div class="card"><h2>لوحة قيادة المدير العام</h2>
+<div class="grid">
+<div class="stat"><span>مراكز التصويت</span><strong id="statCenters">27</strong></div>
+<div class="stat"><span>مكاتب التصويت</span><strong id="statOffices">68</strong></div>
+<div class="stat"><span>المفوضون</span><strong id="statUsers">20</strong></div>
+<div class="stat"><span>مكاتب موزعة</span><strong id="statAssigned">0</strong></div>
+</div>
+<div class="notice">هذه نسخة تجريبية ببيانات وهمية. البيانات محفوظة محليًا في هذا المتصفح فقط، وليست متزامنة مع هواتف أخرى.</div>
+</div>
+<div class="card"><h2>حالة النتائج</h2><div class="grid">
+<div class="stat"><span>مكاتب نتائجها ناقصة (بلدي/ولائي)</span><strong id="statMissing">68</strong></div>
+<div class="stat"><span>مكاتب بها نتائج أولية</span><strong id="statPrelim">0</strong></div>
+<div class="stat"><span>نتائج تمت مراجعتها</span><strong id="statReviewed">0</strong></div>
+<div class="stat"><span>إجمالي أصوات القوائم</span><strong id="statVotes">0</strong></div>
+</div></div>
+<div class="card"><h2>نتائج القوائم والمترشحين</h2><div id="listResults" class="hint">لم تسجل نتائج بعد.</div></div>
+<div class="card"><h2>آخر النتائج المسجلة</h2><div id="recentResults" class="hint">لم تسجل نتائج بعد.</div></div>
+</div>
+</section>
+
+<section id="setup" class="page">
+<div class="card"><h2>إنشاء بيانات المراكز والمكاتب الوهمية</h2>
+<p class="hint">ينشئ 27 مركزًا و68 مكتبًا بأسماء وأرقام تجريبية، ويمكن تعديلها لاحقًا. لا تستخدم هذه البيانات بدل القائمة الرسمية.</p>
+<div class="row"><div class="field"><label>عدد المفوضين في التجربة</label><input id="userCount" type="number" min="1" max="68" value="20"></div>
+<button class="green" onclick="createDemo()">إنشاء/إعادة إنشاء البيانات الوهمية</button></div>
+<div class="notice">إعادة إنشاء البيانات التجريبية تمسح نتائج التجربة والتوزيع الحالي. لا تضغط هذا الزر بعد إدخال بيانات تريد الاحتفاظ بها.</div>
+<div class="row">
+<div class="field"><label>المركز</label><select id="editCenter"></select></div>
+<div class="field"><label>اسم المركز</label><input id="editCenterName" placeholder="اسم المركز"></div>
+<button onclick="saveCenter()">حفظ اسم المركز</button>
+</div>
+<div class="row" style="margin-top:8px">
+<div class="field"><label>المكتب</label><select id="editOffice"></select></div>
+<div class="field"><label>اسم/رقم المكتب</label><input id="editOfficeName" placeholder="اسم المكتب"></div>
+<div class="field"><label>عدد المسجلين</label><input id="editRegistered" type="number" min="0" value="200"></div>
+<button onclick="saveOffice()">حفظ المكتب</button>
+<button class="red" onclick="deleteOffice()">حذف المكتب</button>
+</div>
+<div class="row" style="margin-top:8px;padding-top:10px;border-top:1px dashed #cbd5df">
+<div class="field"><label>إضافة مكتب إلى المركز</label><select id="addOfficeCenter"></select></div>
+<div class="field"><label>اسم/رقم المكتب (اختياري)</label><input id="addOfficeName" placeholder="يُرقَّم تلقائيًا إن تُرك فارغًا"></div>
+<div class="field"><label>عدد المسجلين</label><input id="addOfficeRegistered" type="number" min="0" value="200"></div>
+<button class="green" onclick="addOffice()">إضافة مكتب</button>
+</div>
+<div class="tablewrap" id="officeTable"></div>
+</div>
+</section>
+
+<section id="assign" class="page">
+<div class="card"><h2>توزيع المفوضين على المكاتب</h2>
+<p class="hint">يمكن للمفوض استلام مكتب أو عدة مكاتب، ويشمل الإسناد الانتخابات البلدية والولائية معًا. التوزيع الآلي يفضّل تجميع مكاتب المركز الواحد لدى المفوض نفسه. يمكن تعديل كل مكتب يدويًا.</p>
+<div class="row">
+<div class="field"><label>المفوض</label><select id="assignUser"></select></div>
+<div class="field"><label>المركز</label><select id="assignCenter"></select></div>
+<div class="field" style="flex:2 1 260px"><label>المكاتب (يمكن اختيار أكثر من مكتب)</label>
+<div style="display:flex;gap:6px;margin-bottom:6px"><button type="button" class="light" onclick="toggleAllAssignOffices(true)">تحديد الكل</button><button type="button" class="light" onclick="toggleAllAssignOffices(false)">إلغاء التحديد</button><span id="assignSelCount" class="pill gray" style="align-self:center">0 محدد</span></div>
+<div id="assignOffice" style="border:1px solid #cbd5df;border-radius:8px;background:#fff;max-height:210px;overflow-y:auto;padding:4px 8px"></div></div>
+<button onclick="assignOffice()">إسناد المكاتب المحددة</button>
+</div>
+<div class="row" style="margin-top:10px">
+<button class="green" onclick="autoAssign()">التوزيع الآلي</button>
+<button class="secondary" onclick="clearAssignments()">إلغاء التوزيع</button>
+</div>
+<div id="assignmentSummary" class="tablewrap"></div>
+</div>
+</section>
+
+<section id="lists" class="page">
+<div class="card"><h2>إعداد قوائم الانتخابات والمترشحين</h2>
+<p class="hint">تُجهّز القوائم مسبقًا من المدير العام. APC خاص بالبلدية، وAPW خاص بالمجلس الشعبي الولائي. هذه الأسماء تجريبية.</p>
+<div class="row">
+<div class="field"><label>نوع الانتخابات</label><select id="listType"><option value="APC">APC — بلدية</option><option value="APW">APW — ولاية</option></select></div>
+<div class="field"><label>اسم القائمة</label><input id="listName" placeholder="مثال: القائمة 1"></div>
+<button onclick="addList()">إضافة قائمة</button>
+</div>
+<div class="officeitem" style="margin-top:10px"><h3>تحميل القوائم والمترشحين من ملف Excel</h3>
+<p class="hint">الملف بثلاثة أعمدة: <b>نوع الانتخابات</b> (APC أو APW، أو بلدية/ولائية) — <b>القائمة</b> — <b>المترشح</b>. كل سطر مترشح واحد، ويمكن ترك نوع الانتخابات واسم القائمة فارغين لتتبع ما قبلها. يمكن أيضًا استعمال ورقة واحدة لكل نوع (ورقة اسمها APC وأخرى APW) بعمودين: القائمة والمترشح. تُضاف القوائم الجديدة إلى الموجودة دون حذف أي شيء، ولا تتكرر القائمة أو المترشح إن كانا موجودين.</p>
+<div class="row"><div class="field"><label>ملف Excel أو CSV</label><input type="file" id="listsFile" accept=".xlsx,.xls,.csv" onchange="importListsFile(this)"></div>
+<button class="light" onclick="downloadListsTemplate()">تحميل نموذج الملف</button></div></div>
+<div id="listEditor"></div>
+</div>
+</section>
+
+<section id="results" class="page">
+<div class="card"><h2>إدخال نتائج الفرز</h2>
+<p class="hint">اختر المكتب ثم أدخل الأرقام واحفظها. تُحفظ النتائج على هذا الجهاز كأولية، ثم أرسلها إلى المدير العام من صفحة «إرسال النتائج للمدير».</p>
+<div class="row">
+<div class="field" id="resultUserField"><label>المفوض</label><select id="resultUser" onchange="updateResultOffices()"></select></div>
+<div class="field"><label>المكتب المسند</label><select id="resultOffice"></select></div>
+<div class="field"><label>نوع الانتخابات</label><select id="resultType" onchange="renderResultForm()"><option value="ALL">البلدية والولائية معًا</option><option value="APC">APC — بلدية فقط</option><option value="APW">APW — ولاية فقط</option><option value="PART">نسبة المشاركة (الناخبون حسب الساعة)</option></select></div>
+<button onclick="renderResultForm()">فتح المكتب</button>
+</div>
+<div id="resultForm"></div>
+</div>
+</section>
+
+<section id="send" class="page">
+<div class="card"><h2>إرسال النتائج إلى المدير العام</h2>
+<p class="hint">بعد حفظ النتائج في هذا الجهاز، اضغط «إرسال مباشر إلى المدير» فتصله فورًا مع تنبيه. إن لم يتوفر الإرسال المباشر استعمل «تجهيز رسائل واتساب». تُرسل النتائج في رسالة أو عدة رسائل واتساب تحتوي على رمز مشفر يفهمه تطبيق المدير ويجمّعه تلقائيًا. لا تعدّل نص الرمز.</p>
+<div class="tablewrap" id="sendStatus"></div>
+<div class="row" style="margin-top:10px"><label style="font-weight:normal;display:flex;gap:8px;align-items:center;width:auto;margin:0"><input type="checkbox" id="sendAll" style="width:18px;height:18px;padding:0">إعادة إرسال كل النتائج (حتى المرسلة سابقًا)</label>
+<button class="green" onclick="sendDirect()">إرسال مباشر إلى المدير</button><button class="light" onclick="prepareSend()">تجهيز رسائل واتساب (بديل)</button></div>
+<div id="sendOut"></div></div>
+</section>
+
+<section id="receive" class="page">
+<div class="card"><h2>استلام النتائج من المفوضين</h2>
+<div class="notice" id="directStatus">الإرسال المباشر: جارٍ التحقق…</div>
+<label style="font-weight:normal;display:flex;gap:8px;align-items:center;width:auto;margin:8px 0"><input type="checkbox" id="autoMerge" style="width:18px;height:18px;padding:0" onchange="state.autoMerge=this.checked;save();if(this.checked)mergePending()">دمج تلقائي فور وصول النتائج (دون عرض الرسالة)</label>
+<p class="hint">يكفي نسخ رسائل واتساب التي أرسلها المفوضون ولصقها هنا (يمكن لصق عدة رسائل دفعة واحدة)، أو اختيار ملفات النتائج المرسلة. يتحقق التطبيق من هوية كل مفوض ومن أن المكاتب مسندة إليه، ثم يدمج النتائج تلقائيًا في لوحة القيادة.</p>
+<div class="row"><div class="field"><label>ملفات النتائج (يمكن اختيار عدة ملفات)</label><input type="file" id="recvFiles" multiple accept=".txt,.json,.mfw" onchange="receiveFiles(this)"></div></div>
+<label style="margin-top:10px">أو الصق رسائل واتساب هنا</label>
+<textarea id="recvText" rows="5" placeholder="الصق الرسائل هنا — يبدأ الدمج تلقائيًا عند اللصق" style="width:100%;padding:10px;border:1px solid #cbd5df;border-radius:8px;font:inherit" onpaste="setTimeout(receiveText,60)"></textarea>
+<div class="row" style="margin-top:8px"><button class="green" onclick="receiveText()">دمج النتائج</button><button class="light" onclick="$('recvText').value='';$('recvReport').innerHTML=''">مسح</button></div>
+<div id="recvReport"></div></div>
+<div class="card"><h2>حالة الاستلام حسب المفوض</h2><div class="tablewrap" id="recvStatus"></div></div>
+<div class="card"><h2>سجل الاستلام</h2><div class="tablewrap" id="recvLog"></div></div>
+</section>
+
+<section id="accounts" class="page">
+<div class="card"><h2>حساب المدير العام</h2>
+<div class="row"><div class="field"><label>اسم المستخدم</label><input id="admUser" autocapitalize="off"></div>
+<div class="field"><label>رمز سري جديد (اتركه فارغًا للإبقاء)</label><input id="admPin" type="password"></div>
+<div class="field"><label>رقم واتساب المدير (بالصيغة الدولية، مثل 213555123456)</label><input id="admPhone" inputmode="tel"></div>
+<button onclick="saveAdmin()">حفظ</button></div></div>
+<div class="card"><h2>حسابات المفوضين</h2>
+<p class="hint">لكل مفوض اسم مستخدم ورمز سري خاصان به. الرموز لا تُحفظ إلا مشفّرة، لذلك تظهر بنص واضح هنا مرة واحدة فقط بعد تعيينها. بعد أي تغيير في الرمز أو في توزيع المكاتب أو القوائم، أرسل لكل مفوض <b>ملف الإعداد</b> من جديد ليستورده في هاتفه.</p>
+<div class="row"><button class="light" onclick="genPins()">توليد رموز عشوائية لكل المفوضين</button></div>
+<div class="tablewrap" id="accTable"></div></div>
+</section>
+<div class="foot">نسخة تجريبية محلية — لا تعتمد عليها لإدارة النتائج الرسمية أو البيانات الحساسة.</div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
+<script>
+/* ربط Firestore (مشروع Election26): الإرسال المباشر بين المفوضين والمدير */
+try{
+ firebase.initializeApp({apiKey:"AIzaSyBuNoigU4CEz9PWR89Um0Hte9EqZkb3DkM",authDomain:"election26-8eea6.firebaseapp.com",projectId:"election26-8eea6",storageBucket:"election26-8eea6.firebasestorage.app",messagingSenderId:"332416106878",appId:"1:332416106878:web:ebeb154ca821b506d4732f"});
+ window._fsdb=firebase.firestore();
+}catch(e){console.warn('Firebase init failed',e);window._fsdb=null}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const DBKEY='mofawid_demo_flexible_v1';
+const DLGKEY=DBKEY+'_delegate';
+let curKey=DBKEY;
+let state={centers:[],offices:[],users:[],lists:[],results:[],participation:[],nextListId:1};
+function seedFLN(){
+ if(state.deviceMode||state.seededFLN01)return;
+ const N='حزب جبهة التحرير الوطني (القائمة 01)';
+ state.lists=state.lists||[];
+ const mx=state.lists.reduce((m,l)=>Math.max(m,+l.id||0),0);
+ if(!state.nextListId||state.nextListId<=mx)state.nextListId=mx+1;
+ if(!state.lists.some(l=>l.name===N)){
+  const names=["بوقطوش محمد", "بزاز أسامة", "بوبليعة بوخميس", "نجار نسيم", "بن عليوة عبد الغاني", "بوشواطة قارس", "بو العتروس مراد", "بودربالة قتيحة", "سامح يوسف", "بوالزرايب بلال", "دقيش حسينة", "نموشي لمين", "عجيسي نورالدين", "حيمر الهاشمي", "بلحصين عبد العزيز", "ديب إيمان", "فيلالي مقيد", "نموشي بشرى", "مغزيلي رجاء", "بوراس وسام", "بوتلجة يحي", "بوقزولة نبيل", "بوضف حمزة", "بوذياب رابح", "دقوس سارة", "دباح حسني", "سعيود ياسر", "بوبلاط جمال الدين", "دياح سامي", "كروش زكرياء"];
+  state.lists.push({id:state.nextListId++,type:'APC',name:N,candidates:names.map((n,i)=>({id:'cand_fln01_'+(i+1),name:n}))});
+ }
+ state.seededFLN01=true;
+}
+function uid(prefix){return prefix+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)}
+function save(){try{localStorage.setItem(curKey,JSON.stringify(state))}catch(e){alert('تعذر حفظ البيانات في هذا المتصفح.')}if(typeof schedulePush==='function')schedulePush()} 
+function load(){try{const x=localStorage.getItem(curKey);if(x)state=JSON.parse(x)}catch(e){}}
+async function createDemo(){
+ if(state.offices.length && !await askConfirm('إعادة الإنشاء ستمسح التوزيع والنتائج والقوائم التجريبية الحالية. هل تريد المتابعة؟'))return;
+ const n=Math.max(1,Math.min(68,parseInt($('userCount').value)||20));
+ state={centers:[],offices:[],users:[],lists:[],results:[],participation:[],nextListId:1,admin:state.admin,received:[],inbox:[]};
+ for(let i=1;i<=27;i++)state.centers.push({id:i,name:'مركز تجريبي '+String(i).padStart(2,'0')});
+ let num=1;
+ for(let c=1;c<=27;c++){
+   const count=c<=14?3:2;
+   for(let j=1;j<=count;j++){
+     state.offices.push({id:num,centerId:c,name:'مكتب '+j,registered:200+(num%9)*25,userId:null});
+     num++;
+   }
+ }
+ for(let i=1;i<=n;i++)state.users.push({id:i,name:'مفوض '+String(i).padStart(2,'0')});
+ state.lists=[
+  {id:state.nextListId++,type:'APC',name:'قائمة بلدية 1',candidates:[{id:uid('cand'),name:'مترشح بلدي 1'},{id:uid('cand'),name:'مترشح بلدي 2'},{id:uid('cand'),name:'المترشح المتابَع'}]},
+  {id:state.nextListId++,type:'APC',name:'قائمة بلدية 2',candidates:[{id:uid('cand'),name:'مترشح بلدي أ'},{id:uid('cand'),name:'مترشح بلدي ب'}]},
+  {id:state.nextListId++,type:'APW',name:'قائمة ولائية 1',candidates:[{id:uid('cand'),name:'مترشح ولائي 1'},{id:uid('cand'),name:'المترشح الولائي المتابَع'}]},
+  {id:state.nextListId++,type:'APW',name:'قائمة ولائية 2',candidates:[{id:uid('cand'),name:'مترشح ولائي أ'}]}
+ ];
+ seedFLN();
+ autoAssign(false);save();refreshAll();showPage('dashboard');alert('تم إنشاء 27 مركزًا و68 مكتبًا و'+n+' مفوضًا تجريبيًا.');
+}
+function autoAssign(doAlert=true){
+ if(!state.offices.length){alert('أنشئ البيانات الوهمية أولًا.');return}
+ if(!state.users.length){alert('أضف مفوضين أولًا.');return}
+ state.offices.forEach(o=>o.userId=null);
+ // Group whole centers to one user when possible; if there are fewer users than centers,
+ // cycle center assignments; if more users than centers, split each center in office blocks.
+ let u=0;
+ if(state.users.length<=state.centers.length){
+   for(const c of state.centers){const user=state.users[u%state.users.length];state.offices.filter(o=>o.centerId===c.id).forEach(o=>o.userId=user.id);u++}
+ }else{
+   for(const c of state.centers){
+     const list=state.offices.filter(o=>o.centerId===c.id);
+     for(const o of list){o.userId=state.users[u%state.users.length].id;u++}
+   }
+ }
+ save();refreshAll();
+ if(doAlert)alert('اكتمل التوزيع الآلي مع مراعاة مكاتب كل مركز قدر الإمكان.');
+}
+var assignSel=new Set();
+function assignOffice(){
+ const uidv=+$('assignUser').value;
+ if(!uidv){alert('اختر المفوض أولًا.');return}
+ if(!assignSel.size){alert('اختر مكتبًا واحدًا على الأقل.');return}
+ state.offices.forEach(o=>{if(assignSel.has(o.id))o.userId=uidv});
+ assignSel.clear();save();refreshAll();
+}
+function toggleAllAssignOffices(on){
+ const cid=+$('assignCenter').value||state.centers[0]?.id;
+ state.offices.filter(o=>o.centerId===cid).forEach(o=>{on?assignSel.add(o.id):assignSel.delete(o.id)});
+ updateAssignOffices();
+}
+function toggleAssignOffice(id,on){on?assignSel.add(id):assignSel.delete(id);$('assignSelCount').textContent=assignSel.size+' محدد'}
+async function clearAssignments(){if(await askConfirm('هل تريد إلغاء إسناد جميع المكاتب؟')){state.offices.forEach(o=>o.userId=null);save();refreshAll()}}
+function addOffice(){
+ const cid=+$('addOfficeCenter').value;
+ const c=state.centers.find(x=>x.id===cid);
+ if(!c){alert('اختر المركز أولًا.');return}
+ const inCenter=state.offices.filter(o=>o.centerId===cid);
+ let name=$('addOfficeName').value.trim();
+ if(!name){
+   let k=inCenter.length+1;
+   while(inCenter.some(o=>o.name==='مكتب '+k))k++;
+   name='مكتب '+k;
+ }else if(inCenter.some(o=>o.name===name)){
+   alert('يوجد مكتب بهذا الاسم في المركز نفسه. اختر اسمًا آخر.');return
+ }
+ const reg=+$('addOfficeRegistered').value;
+ const id=state.offices.reduce((m,o)=>Math.max(m,o.id),0)+1;
+ state.offices.push({id,centerId:cid,name,registered:(Number.isFinite(reg)&&reg>=0)?reg:0,userId:null});
+ $('addOfficeName').value='';
+ save();refreshAll();
+ alert('تمت إضافة «'+name+'» إلى '+c.name+'.');
+}
+async function deleteOffice(){
+ const oid=+$('editOffice').value;
+ const o=state.offices.find(x=>x.id===oid);
+ if(!o){alert('اختر المكتب المراد حذفه.');return}
+ const c=state.centers.find(x=>x.id===o.centerId);
+ const hasData=state.results.some(r=>r.officeId===oid)||(state.participation||[]).some(p=>p.officeId===oid);
+ const msg='هل تريد حذف «'+o.name+'» من '+(c?.name||'المركز')+'؟'+(hasData?'\nتنبيه: سيتم أيضًا حذف النتائج ونسب المشاركة المسجلة لهذا المكتب.':'');
+ if(!await askConfirm(msg))return;
+ state.offices=state.offices.filter(x=>x.id!==oid);
+ state.results=state.results.filter(r=>r.officeId!==oid);
+ state.participation=(state.participation||[]).filter(p=>p.officeId!==oid);
+ assignSel.delete(oid);
+ save();refreshAll();
+}
+function updateEditOffices(keepId){
+ const cid=+$('editCenter').value||state.centers[0]?.id;
+ const list=state.offices.filter(o=>o.centerId===cid);
+ $('editOffice').innerHTML=list.map(o=>`<option value="${o.id}">${esc(o.name)} (${o.registered} مسجل) — ${esc(state.users.find(u=>u.id===o.userId)?.name||'غير موزع')}</option>`).join('')||'<option value="">لا توجد مكاتب في هذا المركز</option>';
+ if(keepId&&list.some(o=>o.id===+keepId))$('editOffice').value=keepId;
+ const c=state.centers.find(x=>x.id===cid);
+ $('editCenterName').value=c?.name||'';
+ const o=state.offices.find(x=>x.id===+$('editOffice').value);
+ $('editOfficeName').value=o?.name||'';
+ $('editRegistered').value=o?.registered??0;
+ if($('addOfficeCenter')&&c)$('addOfficeCenter').value=String(c.id);
+}
+function saveCenter(){const c=state.centers.find(x=>x.id===+$('editCenter').value);if(!c)return;c.name=$('editCenterName').value.trim()||c.name;save();refreshAll()}
+function saveOffice(){const o=state.offices.find(x=>x.id===+$('editOffice').value);if(!o)return;o.name=$('editOfficeName').value.trim()||o.name;const n=+$('editRegistered').value;if(Number.isFinite(n)&&n>=0)o.registered=n;save();refreshAll()}
+
+function parseCsvText(t){
+ t=t.replace(/^\uFEFF/,'');
+ const first=t.split(/\r?\n/)[0]||'';
+ const d=(first.split(';').length>first.split(',').length)?';':(first.split('\t').length>first.split(',').length?'\t':',');
+ const rows=[];let row=[],cur='',q=false;
+ for(let i=0;i<t.length;i++){const ch=t[i];
+  if(q){if(ch==='"'){if(t[i+1]==='"'){cur+='"';i++}else q=false}else cur+=ch}
+  else if(ch==='"')q=true;
+  else if(ch===d){row.push(cur);cur=''}
+  else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;row.push(cur);rows.push(row);row=[];cur=''}
+  else cur+=ch}
+ if(cur!==''||row.length){row.push(cur);rows.push(row)}
+ return rows;
+}
+function normListType(v){
+ const t=String(v||'').trim().toUpperCase();
+ if(!t)return '';
+ if(t.includes('APW')||t.includes('ولا')||t.includes('ولائ'))return 'APW';
+ if(t.includes('APC')||t.includes('بلد'))return 'APC';
+ return '';
+}
+function collectListRows(sheets,defType){
+ const out=[];
+ sheets.forEach(sh=>{
+  const rows=sh.rows.filter(r=>r&&r.some(c=>String(c??'').trim()!==''));
+  if(!rows.length)return;
+  let it=-1,il=-1,ic=-1,start=0;
+  const hdr=rows[0].map(c=>String(c??'').trim().toLowerCase());
+  hdr.forEach((h,i)=>{
+   if(/نوع|type|انتخاب/.test(h)&&it<0)it=i;
+   else if(/قائمة|list/.test(h)&&il<0)il=i;
+   else if(/مترشح|candidate|اسم/.test(h)&&ic<0)ic=i;
+  });
+  if(il>=0&&ic>=0)start=1;
+  else{
+   const w=Math.max(...rows.map(r=>r.length));
+   if(w>=3){it=0;il=1;ic=2}else{it=-1;il=0;ic=1}
+  }
+  const shType=normListType(sh.name)||defType;
+  let curT=shType,curL='';
+  for(let r=start;r<rows.length;r++){
+   const row=rows[r];
+   const t=it>=0?normListType(row[it]):'';
+   const l=String(row[il]??'').trim();
+   const c=String(row[ic]??'').trim();
+   if(t)curT=t;
+   if(l)curL=l;
+   if(!curL)continue;
+   out.push({type:curT,list:curL,cand:c});
+  }
+ });
+ return out;
+}
+function applyListRows(rows){
+ const key=x=>String(x).replace(/\s+/g,' ').trim().toLowerCase();
+ const addedLists=new Set(),existingKeys=new Set();let newLists=0,newCands=0,skipped=0;
+ const plan=[];
+ rows.forEach(r=>{
+  let l=state.lists.find(x=>x.type===r.type&&key(x.name)===key(r.list))||plan.find(x=>x.type===r.type&&key(x.name)===key(r.list));
+  if(!l){l={id:null,type:r.type,name:r.list,candidates:[],_new:true};plan.push(l);newLists++}
+  if(r.cand){
+   if(l.candidates.some(c=>key(c.name)===key(r.cand)))skipped++;
+   else{l.candidates.push({id:uid('cand'),name:r.cand,_new:true});newCands++}
+  }
+ });
+ return {plan,newLists,newCands,skipped};
+}
+async function importListsFile(input){
+ const file=input.files&&input.files[0];if(!file)return;
+ try{
+  const buf=await file.arrayBuffer();
+  let sheets=[];
+  if(/\.csv$/i.test(file.name)){
+   let txt;try{txt=new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){txt=new TextDecoder('windows-1256').decode(buf)}
+   sheets=[{name:'',rows:parseCsvText(txt)}];
+  }else{
+   if(typeof XLSX==='undefined'){alert('تعذر تحميل مكتبة Excel (تحتاج اتصالًا بالإنترنت). احفظ الملف بصيغة CSV ثم حمّله، أو أعد المحاولة عند توفر الاتصال.');input.value='';return}
+   const wb=XLSX.read(buf,{type:'array'});
+   sheets=wb.SheetNames.map(n=>({name:n,rows:XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false})}));
+  }
+  const defType=$('listType').value;
+  const rows=collectListRows(sheets,defType);
+  if(!rows.length){alert('لم أجد أي قوائم في الملف. تأكد أن الأعمدة هي: نوع الانتخابات، القائمة، المترشح.');input.value='';return}
+  const {plan,newLists,newCands,skipped}=applyListRows(rows);
+  if(!newLists&&!newCands){alert('كل القوائم والمترشحين الموجودين في الملف مسجلون من قبل. لم يُضف شيء.');input.value='';return}
+  const perType=t=>plan.filter(l=>l._new&&l.type===t).length;
+  const msg='سيتم إضافة:\n• '+newLists+' قائمة جديدة (بلدية: '+perType('APC')+' — ولائية: '+perType('APW')+')\n• '+newCands+' مترشح جديد'+(skipped?'\n• تجاهل '+skipped+' مترشحًا مكررًا':'')+'\n\nمتابعة؟';
+  if(!await askConfirm(msg)){input.value='';return}
+  plan.forEach(l=>{
+   if(l._new){state.lists.push({id:state.nextListId++,type:l.type,name:l.name,candidates:l.candidates.map(c=>({id:c.id,name:c.name}))})}
+   else{
+    const real=state.lists.find(x=>x.type===l.type&&x.name===l.name);
+    if(real)l.candidates.filter(c=>c._new).forEach(c=>real.candidates.push({id:c.id,name:c.name}));
+   }
+  });
+  save();refreshAll();
+  alert('تم تحميل القوائم والمترشحين.');
+ }catch(e){console.error(e);alert('تعذر قراءة الملف: '+(e.message||e))}
+ input.value='';
+}
+function downloadListsTemplate(){
+ const aoa=[['نوع الانتخابات','القائمة','المترشح'],['APC','قائمة بلدية 1','مترشح 1'],['APC','','مترشح 2'],['APC','قائمة بلدية 2','مترشح 1'],['APW','قائمة ولائية 1','مترشح 1'],['APW','','مترشح 2']];
+ if(typeof XLSX!=='undefined'){
+  const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:16},{wch:26},{wch:26}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'القوائم');
+  saveFile('نموذج_القوائم_والمترشحين.xlsx',XLSX.write(wb,{bookType:'xlsx',type:'array'}));
+ }else{
+  saveFile('نموذج_القوائم_والمترشحين.csv','\uFEFF'+aoa.map(r=>r.map(c=>'"'+c.replace(/"/g,'""')+'"').join(',')).join('\r\n'));
+ }
+}
+function addList(){
+ const type=$('listType').value,name=$('listName').value.trim();if(!name){alert('اكتب اسم القائمة.');return}
+ state.lists.push({id:state.nextListId++,type,name,candidates:[]});$('listName').value='';save();refreshAll();
+}
+function addCandidate(listId){
+ const name=prompt('اكتب اسم المترشح:');if(!name||!name.trim())return;
+ const l=state.lists.find(x=>x.id===listId);if(!l)return;l.candidates.push({id:uid('cand'),name:name.trim()});save();refreshAll();
+}
+function renameList(listId){const l=state.lists.find(x=>x.id===listId);if(!l)return;const name=prompt('اسم القائمة:',l.name);if(name&&name.trim()){l.name=name.trim();save();refreshAll()}}
+function renameCandidate(listId,candidateId){const l=state.lists.find(x=>x.id===listId);const c=l?.candidates.find(x=>x.id===candidateId);if(!c)return;const name=prompt('اسم المترشح:',c.name);if(name&&name.trim()){c.name=name.trim();save();refreshAll()}}
+async function deleteList(listId){if(!await askConfirm('حذف القائمة ومترشحيها؟'))return;state.lists=state.lists.filter(x=>x.id!==listId);save();refreshAll()}
+function renderListEditor(){
+ $('listEditor').innerHTML=['APC','APW'].map(type=>`<h3>${type==='APC'?'قوائم البلدية APC':'قوائم الولاية APW'}</h3>`+
+ state.lists.filter(l=>l.type===type).map(l=>`<div class="officeitem"><h3>${esc(l.name)}</h3><div class="row"><button class="light" onclick="renameList(${l.id})">تعديل الاسم</button><button onclick="addCandidate(${l.id})">إضافة مترشح</button><button class="red" onclick="deleteList(${l.id})">حذف القائمة</button></div><div>${l.candidates.map(c=>`<span class="pill">${esc(c.name)} <button class="light" style="padding:2px 5px;color:#17324d" onclick="renameCandidate(${l.id},'${c.id}')">تعديل</button></span>`).join(' ')||'<span class="hint">لا يوجد مترشحون بعد.</span>'}</div></div>`).join('')||'<p class="hint">لم تتم إضافة قوائم.</p>').join('');
+}
+function refreshAll(){
+ $('statCenters').textContent=state.centers.length;$('statOffices').textContent=state.offices.length;$('statUsers').textContent=state.users.length;
+ $('statAssigned').textContent=state.offices.filter(o=>o.userId).length;
+ const officeIds=new Set(state.results.map(r=>r.officeId));
+ $('statMissing').textContent=state.offices.filter(o=>!(state.results.some(r=>r.officeId===o.id&&r.type==='APC')&&state.results.some(r=>r.officeId===o.id&&r.type==='APW'))).length;
+ $('statPrelim').textContent=state.results.filter(r=>r.status==='أولي').length;
+ $('statReviewed').textContent=state.results.filter(r=>r.status==='مراجع').length;
+ $('statVotes').textContent=state.results.reduce((sum,r)=>sum+r.listVotes.reduce((s,v)=>s+(+v.votes||0),0),0).toLocaleString('fr-FR');
+ const _keepEC=$('editCenter').value,_keepEO=$('editOffice').value,_keepAC=$('assignCenter').value;
+ $('editCenter').innerHTML=state.centers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+ if(_keepEC&&state.centers.some(c=>c.id===+_keepEC))$('editCenter').value=_keepEC;
+ updateEditOffices(_keepEO);
+ const _keepAdd=$('addOfficeCenter').value;
+ $('addOfficeCenter').innerHTML=state.centers.map(c=>`<option value="${c.id}">${esc(c.name)} (${state.offices.filter(o=>o.centerId===c.id).length})</option>`).join('');
+ if(_keepAdd)$('addOfficeCenter').value=_keepAdd;
+ $('assignUser').innerHTML=state.users.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('');
+ $('assignCenter').innerHTML=state.centers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+ if(_keepAC&&state.centers.some(c=>c.id===+_keepAC))$('assignCenter').value=_keepAC;
+ updateAssignOffices();
+ $('resultUser').innerHTML=state.users.filter(u=>role()!=='delegate'||u.id===(getSession()||{}).userId).map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('');
+ updateResultOffices();
+ $('officeTable').innerHTML='<table><thead><tr><th>المركز</th><th>المكتب</th><th>المسجلون</th><th>المفوض</th></tr></thead><tbody>'+state.offices.map(o=>`<tr><td>${esc(state.centers.find(c=>c.id===o.centerId)?.name||'')}</td><td>${esc(o.name)}</td><td>${o.registered}</td><td>${esc(state.users.find(u=>u.id===o.userId)?.name||'غير موزع')}</td></tr>`).join('')+'</tbody></table>';
+ $('assignmentSummary').innerHTML='<table><thead><tr><th>المفوض</th><th>عدد المكاتب</th><th>المكاتب المسندة</th></tr></thead><tbody>'+state.users.map(u=>{const os=state.offices.filter(o=>o.userId===u.id);return `<tr><td>${esc(u.name)}</td><td>${os.length}</td><td>${os.map(o=>`<span class="pill">مركز ${o.centerId} / ${esc(o.name)}</span>`).join(' ')||'—'}</td></tr>`}).join('')+'</tbody></table>';
+ renderListEditor();renderRecentResults();renderListResults();
+ ensureAccounts();applyRole();renderAdminAlerts();renderAccounts();renderReceive();renderSendPage();renderDelegateDash();
+ if(role()==='admin'){subscribeInbox();const ch=document.getElementById('autoMerge');if(ch)ch.checked=!!state.autoMerge}
+}
+function updateAssignOffices(){
+ const cid=+$('assignCenter').value||state.centers[0]?.id;
+ $('assignOffice').innerHTML=state.offices.filter(o=>o.centerId===cid).map(o=>`<label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin:0;padding:7px 0;border-bottom:1px solid #eef0f3;cursor:pointer"><input type="checkbox" style="width:18px;height:18px;padding:0" ${assignSel.has(o.id)?'checked':''} onchange="toggleAssignOffice(${o.id},this.checked)"><span>${esc(o.name)} — ${esc(state.users.find(u=>u.id===o.userId)?.name||'غير موزع')}</span></label>`).join('');
+ $('assignSelCount').textContent=assignSel.size+' محدد';
+}
+function updateResultOffices(){
+ const uidv=+$('resultUser').value;
+ const assigned=state.offices.filter(o=>o.userId===uidv);
+ $('resultOffice').innerHTML=assigned.map(o=>`<option value="${o.id}">${esc(state.centers.find(c=>c.id===o.centerId)?.name||'')} — ${esc(o.name)}</option>`).join('');
+ renderResultForm();
+}
+
+function openSelectedOffice(){
+ const task=$('officeTask');
+ task.innerHTML='تم اختيار المكتب. اختر <b>تسجيل نسبة المشاركة</b> أو <b>تسجيل الأصوات</b>.';
+ $('resultForm').innerHTML='';
+}
+function showOfficeTask(task){
+ if(task==='participation')renderParticipationForm();
+ else renderResultForm();
+}
+function renderParticipationForm(){
+ const oid=+$('resultOffice').value,box=$('resultForm');
+ const office=state.offices.find(o=>o.id===oid);
+ if(!office){box.innerHTML='<div class="notice">لا توجد مكاتب مسندة لهذا المفوض. وزّع المكاتب أولًا.</div>';return}
+ const old=(state.participation||[]).find(p=>p.officeId===oid);
+ const times=[10,12,14,16,18];
+ box.innerHTML=`<div class="notice">المركز: <b>${esc(state.centers.find(c=>c.id===office.centerId)?.name||'')}</b> — المكتب: <b>${esc(office.name)}</b><br>عدد المسجلين الرسمي: <b>${office.registered}</b> (ثابت ولا يعاد إدخاله مع كل تحديث).</div>
+ <h3>تسجيل عدد الناخبين حسب التوقيت</h3>
+ ${times.map(t=>`<div class="lineinput"><label>الساعة ${t}:00</label><input type="number" min="0" max="${office.registered}" step="1" data-turnout="${t}" value="${old&&old.times[t]!=null?old.times[t]:''}" placeholder="عدد الناخبين"></div>`).join('')}
+ <div class="row"><button class="green" onclick="saveParticipation(${oid})">حفظ المشاركة</button></div>
+ <p class="hint">يجب أن يكون العدد عددًا صحيحًا، لا يتجاوز عدد المسجلين، ولا يقل عن العدد المسجل في التوقيت السابق.</p>
+ <div id="participationSummary"></div>`;
+}
+function saveParticipation(officeId){
+ const office=state.offices.find(o=>o.id===officeId);if(!office)return;
+ const inputs=[...document.querySelectorAll('[data-turnout]')],times={};
+ for(const input of inputs){
+  if(input.value==='')continue;
+  const n=Number(input.value);
+  if(!Number.isInteger(n)||n<0||n>office.registered){alert('أدخل عددًا صحيحًا من 0 إلى عدد المسجلين الرسمي.');input.focus();return}
+  times[input.dataset.turnout]=n;
+ }
+ const order=[10,12,14,16,18],entered=order.filter(t=>times[t]!=null);
+ for(let i=1;i<entered.length;i++){
+  if(times[entered[i]]<times[entered[i-1]]){alert('عدد الناخبين في الساعة '+entered[i]+':00 لا يمكن أن يقل عن الساعة '+entered[i-1]+':00.');return}
+ }
+ const idx=(state.participation||[]).findIndex(p=>p.officeId===officeId);
+ const entry={officeId,times,updatedAt:new Date().toISOString(),updatedBy:state.users.find(u=>u.id===+$('resultUser').value)?.name||'المدير العام'};
+ if(idx>=0)state.participation[idx]=entry;else{if(!state.participation)state.participation=[];state.participation.push(entry)}
+ save();
+ const last=[18,16,14,12,10].map(t=>`<span class="pill gray">${t}:00 — ${times[t]==null?'—':times[t]}</span>`).join(' ');
+ $('participationSummary').innerHTML='<p><b>تم حفظ المشاركة.</b></p>'+last;
+ alert('تم حفظ أرقام المشاركة.');
+}
+function resultTypeBlock(office,type){
+ const oid=office.id;
+ const existing=state.results.find(r=>r.officeId===oid&&r.type===type);
+ const lists=state.lists.filter(l=>l.type===type);
+ const label=type==='APC'?'الانتخابات البلدية (APC)':'الانتخابات الولائية (APW)';
+ return `<div id="resForm_${type}" class="officeitem"><h2 style="font-size:18px;margin:0 0 8px">${label} ${existing?`<span class="pill">${existing.status}</span>`:'<span class="pill gray">لم تسجل</span>'}</h2>
+ <h3>أصوات القوائم</h3>${lists.map(l=>{const old=existing?.listVotes.find(v=>v.listId===l.id);return `<div class="lineinput"><label>${esc(l.name)}</label><input type="number" min="0" data-listvote="${l.id}" value="${old?old.votes:''}" placeholder="عدد الأصوات"></div>`}).join('')||'<p class="hint">أضف القوائم من صفحة القوائم والمترشحين.</p>'}
+ <h3>أصوات المترشحين</h3>${lists.map(l=>`<div class="officeitem"><h3>${esc(l.name)}</h3>${l.candidates.map(c=>{const old=existing?.candidateVotes.find(v=>v.candidateId===c.id);return `<div class="lineinput"><label>${esc(c.name)}</label><input type="number" min="0" data-candidate="${c.id}" value="${old?old.votes:''}" placeholder="عدد الأصوات"></div>`}).join('')||'<p class="hint">أضف أسماء المترشحين أولًا.</p>'}</div>`).join('')}
+ ${existing&&role()==='admin'?`<div class="row"><button class="secondary" onclick="reviewResult(${oid},'${type}')">اعتماد مراجعة ${type==='APC'?'البلدية':'الولائية'}</button></div>`:''}</div>`;
+}
+function renderResultForm(){
+ const oid=+$('resultOffice').value,type=$('resultType').value,box=$('resultForm');
+ if(type==='PART'){renderParticipationForm();return}
+ const office=state.offices.find(o=>o.id===oid);
+ if(!office){box.innerHTML='<div class="notice">لا توجد مكاتب مسندة لهذا المفوض. وزّع المكاتب أولًا.</div>';return}
+ const types=type==='ALL'?['APC','APW']:[type];
+ box.innerHTML=`<div class="notice">المركز: <b>${esc(state.centers.find(c=>c.id===office.centerId)?.name||'')}</b> — المكتب: <b>${esc(office.name)}</b> — المسجلون: <b>${office.registered}</b></div>`
+ +types.map(t=>resultTypeBlock(office,t)).join('')
+ +`<div class="row"><button class="green" onclick="saveResult(${oid},'${type}')">${type==='ALL'?'حفظ النتائج الأولية (بلدية + ولائية)':'حفظ النتائج الأولية'}</button></div>
+ <p class="hint">يجب أن تكون الأرقام أعدادًا صحيحة غير سالبة. تُحفظ النتائج محليًا على هذا الجهاز.${type==='ALL'?' يُحفظ كل نوع على حدة، ولا يُسجَّل النوع الذي تُرك فارغًا.':''}</p>`;
+}
+function collectResult(officeId,type){
+ const root=document.getElementById('resForm_'+type);if(!root)return null;
+ const listVotes=[...root.querySelectorAll('[data-listvote]')].map(i=>({listId:+i.dataset.listvote,votes:i.value===''?null:Number(i.value)}));
+ const candidateVotes=[...root.querySelectorAll('[data-candidate]')].map(i=>({candidateId:i.dataset.candidate,votes:i.value===''?null:Number(i.value)}));
+ const vals=[...listVotes,...candidateVotes].filter(x=>x.votes!==null);
+ return {listVotes,candidateVotes,vals};
+}
+function saveResult(officeId,type){
+ const office=state.offices.find(o=>o.id===officeId);if(!office)return;
+ const types=type==='ALL'?['APC','APW']:[type];
+ const batch=[];
+ for(const t of types){
+  const d=collectResult(officeId,t);if(!d)continue;
+  if(d.vals.some(x=>!Number.isInteger(x.votes)||x.votes<0)){alert('تحقق من الأرقام ('+(t==='APC'?'البلدية':'الولائية')+'): يجب أن تكون أعدادًا صحيحة غير سالبة.');return}
+  const existing=state.results.find(r=>r.officeId===officeId&&r.type===t);
+  if(type==='ALL'&&!d.vals.length&&!existing)continue;
+  batch.push({t,d,existing});
+ }
+ if(!batch.length){alert('لم تُدخل أي أرقام.');return}
+ const by=state.users.find(u=>u.id===+$('resultUser').value)?.name||'المدير العام';
+ for(const {t,d,existing} of batch){
+  const entry={officeId,type:t,listVotes:d.listVotes,candidateVotes:d.candidateVotes,status:'أولي',updatedAt:new Date().toISOString(),updatedBy:by};
+  if(existing)Object.assign(existing,entry);else state.results.push(entry);
+ }
+ save();refreshAll();alert('تم حفظ النتائج كأولية.');
+}
+async function reviewResult(officeId,type){const r=state.results.find(x=>x.officeId===officeId&&x.type===type);if(!r)return;if(await askConfirm('هل راجعت هذه الأرقام وتريد اعتماد المراجعة؟')){r.status='مراجع';r.reviewedAt=new Date().toISOString();save();refreshAll();renderResultForm();alert('تم تسجيل المراجعة.');}}
+function setFollowed(t,v){state.followed=state.followed||{};state.followed[t]=v;save();renderListResults()}
+function toggleFollow(t,id){state.followedIds=state.followedIds||{};const a=state.followedIds[t]||(state.followedIds[t]=[]);const i=a.indexOf(id);if(i<0)a.push(id);else a.splice(i,1);save();renderListResults()}
+function setSeats(t,v){state.seats=state.seats||{};state.seats[t]=Math.max(0,parseInt(v)||0);save();renderListResults()}
+function renderListResults(){
+ const box=$('listResults');if(!box)return;
+ const num=n=>(+n||0).toLocaleString('fr-FR');
+ const parts=[['APC','البلدية'],['APW','الولائية']].map(([t,label])=>{
+  const rs=state.results.filter(r=>r.type===t);
+  const lists=state.lists.filter(l=>l.type===t);
+  if(!lists.length)return '';
+  const lv={},cv={};
+  rs.forEach(r=>{(r.listVotes||[]).forEach(v=>{lv[v.listId]=(lv[v.listId]||0)+(+v.votes||0)});(r.candidateVotes||[]).forEach(v=>{cv[v.candidateId]=(cv[v.candidateId]||0)+(+v.votes||0)})});
+  const total=lists.reduce((a,l)=>a+(lv[l.id]||0),0);
+  const pct=n=>total?((n/total)*100).toFixed(1)+'%':'—';
+  const all=[];lists.forEach(l=>l.candidates.forEach(c=>all.push({c,l,v:cv[c.id]||0})));
+  state.followedIds=state.followedIds||{};
+  if(!state.followedIds[t]){const a=[];const f0=state.followed&&state.followed[t];if(f0&&all.some(x=>x.c.id===f0))a.push(f0);else{const d=all.find(x=>/المتابَع|المتابع/.test(x.c.name));if(d)a.push(d.c.id)}state.followedIds[t]=a}
+  const fids=state.followedIds[t].filter(id=>all.some(x=>x.c.id===id));
+  const ranked=[...lists].sort((a,b)=>(lv[b.id]||0)-(lv[a.id]||0));
+  const folBox=fids.length?`<div class="notice" style="border-color:#16835b;background:#e7f5ec"><b>المترشحون المتابَعون (${fids.length})</b>`+fids.map(id=>{const x=all.find(y=>y.c.id===id);const jn=x.l.candidates.findIndex(c=>c.id===id)+1;return `<br>★ <b>${esc(x.c.name)}</b> (رقم ${jn}) — ${esc(x.l.name)} (المرتبة ${ranked.findIndex(l=>l.id===x.l.id)+1} من ${ranked.length}) — أصواته: <b>${num(x.v)}</b> — أصوات قائمته: <b>${num(lv[x.l.id]||0)}</b> (${pct(lv[x.l.id]||0)})`}).join('')+`</div>`:'<p class="hint">اضغط على نجمة أي مترشح لمتابعته، ويمكنك متابعة أكثر من مترشح.</p>';
+  const sel='';
+  const rows=ranked.map(l=>`<tr style="background:#f4f6f8;font-weight:bold"><td></td><td></td><td>${esc(l.name)}</td><td>${num(lv[l.id]||0)}</td><td>${pct(lv[l.id]||0)}</td></tr>`+l.candidates.map((c,j)=>`<tr${fids.includes(c.id)?' style="background:#e7f5ec;font-weight:bold"':''}><td style="text-align:center"><span onclick="toggleFollow('${t}','${esc(c.id)}')" style="cursor:pointer;font-size:24px;line-height:1;user-select:none;color:${fids.includes(c.id)?'#f6d365':'#c9d3ce'}">${fids.includes(c.id)?'★':'☆'}</span></td><td style="text-align:center"><b>${j+1}</b></td><td>↳ ${esc(c.name)}</td><td>${num(cv[c.id]||0)}</td><td></td></tr>`).join('')).join('');
+
+  const seats=+((state.seats||{})[t])||0;
+  let calc=`<div class="field" style="margin:12px 0 4px"><label><b>حاسبة المقاعد (${label})</b> — عدد المقاعد المطلوب شغلها</label><input type="number" min="1" inputmode="numeric" value="${seats||''}" placeholder="مثال: 19" onchange="setSeats('${t}',this.value)"></div>`;
+  if(seats>0&&total>0){
+   const thr=total*0.05;
+   let el=lists.filter(l=>(lv[l.id]||0)>=thr);
+   const noneOver=!el.length;if(noneOver)el=[...lists];
+   const ev=el.reduce((a,l)=>a+(lv[l.id]||0),0);
+   const Q=ev/seats;
+   const al=el.map(l=>{const v=lv[l.id]||0;let q=Math.floor(v*seats/ev);if((q+1)*ev<=v*seats)q++;return{l,v,q,r:v*seats-q*ev,b:0}});
+   let rem=seats-al.reduce((a,x)=>a+x.q,0);
+   const ord=[...al].sort((a,b)=>b.r-a.r||b.v-a.v);
+   for(let k=0;rem>0&&ord.length;k++,rem--){ord[k%ord.length].b++}
+   const seatOf={};al.forEach(x=>{seatOf[x.l.id]={q:x.q,b:x.b,s:x.q+x.b}});
+   const crow=ranked.map(l=>{const s=seatOf[l.id];const v=lv[l.id]||0;return `<tr><td>${esc(l.name)}</td><td>${num(v)}</td><td>${pct(v)}</td><td>${s?s.q:0}</td><td>${s?s.b:0}</td><td><b>${s?s.s:0}</b>${s?'':' <small>(أقل من 5%)</small>'}</td></tr>`}).join('');
+   const elect=ranked.filter(l=>seatOf[l.id]&&seatOf[l.id].s>0).map(l=>{const n=seatOf[l.id].s;const cs=l.candidates.map((c,j)=>({c,j,v:cv[c.id]||0})).sort((a,b)=>b.v-a.v||a.j-b.j).slice(0,n);return `<p style="margin:6px 0"><b>${esc(l.name)}</b> (${n} مقعد):<br>${cs.map(x=>`${x.j+1}. ${esc(x.c.name)} <small>(${num(x.v)})</small>`).join('<br>')}</p>`}).join('');
+   calc+=`<div class="notice"><b>المعامل الانتخابي = ${num(Math.round(Q*100)/100)}</b> (${num(ev)} صوت ÷ ${seats} مقعد)${noneOver?'<br>لم تبلغ أي قائمة 5%، فدخلت كل القوائم في التوزيع.':''}</div><div class="tablewrap"><table><thead><tr><th>القائمة</th><th>الأصوات</th><th>النسبة</th><th>بالمعامل</th><th>بالباقي</th><th>المجموع</th></tr></thead><tbody>${crow}</tbody></table></div><h4 style="margin:10px 0 2px">المترشحون المتوقع فوزهم (حسب الأصوات التفضيلية)</h4>${elect}${all.some(x=>x.v>0)?'':'<p class="hint">لم تُسجَّل أصوات المترشحين بعد.</p>'}<p class="hint">تقدير أولي مبني على أصوات القوائم المسجلة: عتبة 5%، ثم المعامل الانتخابي، ثم أكبر الباقي. النتيجة الرسمية تعلنها السلطة الوطنية المستقلة للانتخابات.</p>`;
+  }
+  return `<h3 style="margin:14px 0 4px">النتائج ${label} — ${rs.length} مكتب مسجل، ${num(total)} صوت للقوائم</h3>${folBox}${sel}<div class="tablewrap"><table><thead><tr><th>المتابَع</th><th>رقم المترشح</th><th>القائمة / المترشح</th><th>الأصوات</th><th>النسبة</th></tr></thead><tbody>${rows}</tbody></table></div>${calc}`;
+ }).join('');
+ box.className='';box.innerHTML=parts||'<p class="hint">لا توجد قوائم بعد.</p>';
+}
+function renderRecentResults(){
+ const box=$('recentResults');if(!state.results.length){box.textContent='لم تسجل نتائج بعد.';return}
+ box.innerHTML='<table><thead><tr><th>المركز</th><th>المكتب</th><th>النوع</th><th>مجموع أصوات القوائم</th><th>الحالة</th><th>آخر تحديث</th></tr></thead><tbody>'+state.results.slice(-8).reverse().map(r=>{const o=state.offices.find(x=>x.id===r.officeId);const sum=r.listVotes.reduce((s,v)=>s+(+v.votes||0),0);return `<tr><td>${esc(state.centers.find(c=>c.id===o?.centerId)?.name||'')}</td><td>${esc(o?.name||'')}</td><td>${r.type}</td><td>${sum}</td><td>${r.status}</td><td>${new Date(r.updatedAt).toLocaleString('ar-DZ')}</td></tr>`}).join('')+'</tbody></table>';
+}
+function hideAllPages(){document.querySelectorAll('section.page').forEach(function(page){page.classList.remove('active');page.hidden=true;page.setAttribute('aria-hidden','true');page.style.display='none';page.style.visibility='hidden';page.style.opacity='0';page.style.height='0';page.style.overflow='hidden';});}
+function normalizeDemoOfficeNames(){
+ // صحّح أسماء المكاتب التجريبية القديمة فقط، مع الحفاظ على الأسماء التي عدّلها المستخدم.
+ const counters={};
+ state.offices.forEach(o=>{
+   counters[o.centerId]=(counters[o.centerId]||0)+1;
+   if(/^مكتب\s*0*\d+$/.test(String(o.name||''))) o.name='مكتب '+counters[o.centerId];
+ });
+}
+
+/* ===================== الحسابات والأدوار ===================== */
+const SESSKEY='mofawid_session_v1';
+function cyrb53(str,seed){let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0,ch;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return 4294967296*(2097151&h2)+(h1>>>0)}
+function hs(str){str=String(str);return cyrb53(str,1).toString(36)+cyrb53(str,2).toString(36)}
+function pinHash(key,pin){return hs('mfw26|'+key+'|'+pin)}
+function b64e(str){return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function b64d(b){b=b.replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';return decodeURIComponent(escape(atob(b)))}
+function getSession(){try{return JSON.parse(sessionStorage.getItem(SESSKEY)||localStorage.getItem(SESSKEY)||'null')}catch(e){return null}}
+function role(){const s=getSession();return s?s.role:null}
+function clearSession(){try{sessionStorage.removeItem(SESSKEY);localStorage.removeItem(SESSKEY)}catch(e){}}
+/* ===== مزامنة الإعدادات عبر Firestore: المدير ينشر، والمفوض يستقبل تلقائياً ===== */
+let _cfgLast='',_cfgTimer=null,_cfgUnsub=null,_cfgApplied='';
+function cfgPayload(){return{centers:state.centers,offices:state.offices,lists:state.lists,nextListId:state.nextListId||1}}
+function schedulePush(){
+ if(!window._fsdb||state.deviceMode||curKey!==DBKEY||role()!=='admin')return;
+ clearTimeout(_cfgTimer);_cfgTimer=setTimeout(pushConfig,1500);
+}
+async function pushConfig(){
+ try{
+  const json=JSON.stringify(cfgPayload());if(json===_cfgLast)return;
+  const ref=window._fsdb.doc('config/main');
+  if(!state.cfgSynced){
+   const d=await ref.get();
+   if(d.exists&&!await askConfirm('توجد إعدادات منشورة سابقاً في السحابة. هل تستبدلها بإعدادات هذا الجهاز؟'))return;
+  }
+  await ref.set({json:json,at:new Date().toISOString()});
+  _cfgLast=json;
+  if(!state.cfgSynced){state.cfgSynced=true;save()}
+ }catch(e){console.warn('config push',e)}
+}
+function startConfigSync(){
+ if(!window._fsdb||!state.deviceMode||!state.users[0])return;
+ if(_cfgUnsub){try{_cfgUnsub()}catch(e){}_cfgUnsub=null}
+ const me=state.users[0];
+ _cfgUnsub=window._fsdb.doc('config/main').onSnapshot(snap=>{
+  if(!snap.exists)return;
+  const raw=snap.data().json;if(!raw||raw===_cfgApplied)return;
+  let c;try{c=JSON.parse(raw)}catch(e){return}
+  if(!c||!Array.isArray(c.offices)||!Array.isArray(c.lists))return;
+  _cfgApplied=raw;
+  const offs=c.offices.filter(o=>o.userId===me.id);
+  const ids=new Set(offs.map(o=>o.id)),cids=new Set(offs.map(o=>o.centerId));
+  state.offices=offs;state.centers=(c.centers||[]).filter(x=>cids.has(x.id));
+  state.lists=c.lists;state.nextListId=c.nextListId||state.nextListId||1;
+  state.results=(state.results||[]).filter(r=>ids.has(r.officeId));
+  state.participation=(state.participation||[]).filter(p=>ids.has(p.officeId));
+  save();
+  const a=document.activeElement;
+  if(a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))a.addEventListener('blur',()=>setTimeout(refreshAll,300),{once:true});
+  else refreshAll();
+ },e=>console.warn('config sync',e));
+}
+function startCloud(sess){if(!sess)return;if(sess.role==='admin')schedulePush();else startConfigSync()}
+function ensureAccounts(){
+ if(!Array.isArray(state.received))state.received=[];
+ if(!Array.isArray(state.inbox))state.inbox=[];
+ if(!state.deviceMode){
+  if(!state.admin)state.admin={username:'admin',pinHash:pinHash('admin','1234'),phone:'',def:true};
+  state.users.forEach(u=>{if(!u.username){u.username='m'+String(u.id).padStart(2,'0');u.pinHash=pinHash(u.id,'1234');u.def=true}});
+ }
+}
+let _loginFails=0,_loginLock=0;
+function peekStore(key){try{return JSON.parse(localStorage.getItem(key)||'null')}catch(e){return null}}
+function switchStore(key){if(curKey!==key){curKey=key;load()}ensureAccounts()}
+function doLogin(){
+ const msg=$('loginMsg');const fail=t=>{msg.textContent=t;msg.style.display='block'};
+ if(Date.now()<_loginLock){fail('محاولات كثيرة خاطئة. انتظر بضع ثوانٍ ثم أعد المحاولة.');return}
+ const un=$('loginUser').value.trim().toLowerCase(),pin=$('loginPin').value;
+ if(!un||!pin){fail('أدخل اسم المستخدم والرمز السري.');return}
+ const mainS=peekStore(DBKEY),dlgS=peekStore(DLGKEY);
+ if(mainS&&mainS.admin&&String(mainS.admin.username).toLowerCase()===un&&mainS.admin.pinHash===pinHash('admin',pin)){switchStore(DBKEY);_loginFails=0;startSession({role:'admin'});return}
+ const u=dlgS&&(dlgS.users||[]).find(x=>x.username&&String(x.username).toLowerCase()===un);
+ if(u&&u.pinHash===pinHash(u.id,pin)){switchStore(DLGKEY);_loginFails=0;startSession({role:'delegate',userId:u.id});return}
+ _loginFails++;if(_loginFails>=5){_loginLock=Date.now()+15000;_loginFails=0}
+ fail('اسم المستخدم أو الرمز السري غير صحيح.'+(dlgS?'':' إن كنت مفوضًا فاستورد ملف الإعداد أولًا من الأسفل.'));
+}
+function startSession(s){
+ try{if(s.role==='admin')sessionStorage.setItem(SESSKEY,JSON.stringify(s));else localStorage.setItem(SESSKEY,JSON.stringify(s))}catch(e){}
+ $('loginScreen').style.display='none';$('loginPin').value='';$('loginMsg').style.display='none';
+ window._navOpen=false;refreshAll();showPage('dashboard');startCloud(s);
+}
+async function resetAdminPin(){
+ if(!await askConfirm('سيُعاد ضبط حساب المدير إلى: admin / 1234، دون المساس بالبيانات. هل تريد المتابعة؟'))return;
+ try{
+  let st=peekStore(DBKEY);
+  if(!st||st.deviceMode)st=(curKey===DBKEY?state:null);
+  if(!st){alert('لا توجد بيانات مدير على هذا الجهاز. ادخل بـ admin / 1234 مباشرة.');return}
+  st.admin={username:'admin',pinHash:pinHash('admin','1234'),phone:(st.admin&&st.admin.phone)||'',def:true};
+  localStorage.setItem(DBKEY,JSON.stringify(st));
+  if(curKey===DBKEY)state.admin=st.admin;
+  _loginFails=0;_loginLock=0;
+  $('loginUser').value='admin';$('loginPin').value='';
+  const m=$('loginMsg');m.textContent='تمت إعادة الضبط. ادخل الآن بـ admin والرمز 1234، ثم غيّر الرمز من «الحسابات والإعداد».';m.style.display='block';
+ }catch(e){alert('تعذرت إعادة الضبط.')}
+}
+function showLogin(){
+ $('loginScreen').style.display='block';$('loginPin').value='';$('loginMsg').style.display='none';
+ const d=peekStore(DLGKEY);
+ $('loginHint').textContent=(d&&d.users&&d.users[0])?'حساب مفوض مستورد على هذا الجهاز: '+(d.users[0].name||'')+' ('+(d.users[0].username||'')+')':'';
+ window.scrollTo(0,0);
+}
+function applyRole(){
+ const r=role();
+ document.querySelectorAll('#nav .adm').forEach(b=>b.style.display=r==='admin'?'':'none');
+ document.querySelectorAll('#nav .dlg').forEach(b=>b.style.display=r==='delegate'?'':'none');
+ $('adminDash').style.display=r==='delegate'?'none':'';
+ $('delegateDash').style.display=r==='delegate'?'':'none';
+ $('resultUserField').style.display=r==='delegate'?'none':'';
+}
+function renderAdminAlerts(){
+ if(role()!=='admin'){$('adminAlerts').innerHTML='';return}
+ const defs=(state.admin&&state.admin.def?1:0)+state.users.filter(u=>u.def).length;
+ $('adminAlerts').innerHTML=defs?'<div class="notice" style="border-color:#b42318;background:#fdecea">ما زالت الرموز السرية الافتراضية (1234) مستعملة في '+defs+' حساب. غيّرها من «الحسابات والإعداد» قبل توزيع الملفات على المفوضين. <button class="light" style="margin-top:6px" onclick="showPage(\'accounts\')">فتح الحسابات</button></div>':'';
+}
+
+/* ---- إدارة الحسابات (المدير) ---- */
+let sessionPins={};
+function normPhone(v){let d=String(v||'').replace(/\D/g,'');if(d.startsWith('00'))d=d.slice(2);else if(d.startsWith('0'))d='213'+d.slice(1);return d}
+function renderAccounts(){
+ if(role()!=='admin')return;
+ if(document.activeElement&&['admUser','admPin','admPhone'].includes(document.activeElement.id)===false){$('admUser').value=state.admin.username||'';$('admPhone').value=state.admin.phone||''}
+ $('accTable').innerHTML='<table><thead><tr><th>المفوض</th><th>اسم المستخدم</th><th>رمز سري جديد</th><th>رقم واتساب</th><th>الرمز الحالي</th><th>إجراءات</th></tr></thead><tbody>'+state.users.map(u=>`<tr><td>${esc(u.name)}</td><td><input id="acc_u_${u.id}" value="${esc(u.username||'')}" autocapitalize="off" style="min-width:90px"></td><td><input id="acc_p_${u.id}" placeholder="اتركه للإبقاء" style="min-width:90px"></td><td><input id="acc_t_${u.id}" value="${esc(u.phone||'')}" inputmode="tel" style="min-width:110px"></td><td>${sessionPins[u.id]?'<b>'+esc(sessionPins[u.id])+'</b>':(u.def?'<span class="pill gray">1234 (افتراضي)</span>':'<span class="pill gray">مخفي</span>')}</td><td style="white-space:nowrap"><button onclick="saveAccount(${u.id})">حفظ</button> <button class="green" onclick="sendConfig(${u.id})">ملف الإعداد</button> <button class="light" onclick="sendCreds(${u.id})">رسالة الحساب</button></td></tr>`).join('')+'</tbody></table>';
+}
+function saveAdmin(){
+ const un=$('admUser').value.trim(),pin=$('admPin').value;
+ if(!un){alert('اكتب اسم المستخدم.');return}
+ if(state.users.some(u=>String(u.username).toLowerCase()===un.toLowerCase())){alert('اسم المستخدم مستعمل لدى مفوض.');return}
+ if(pin&&pin.length<4){alert('الرمز السري 4 أحرف أو أرقام على الأقل.');return}
+ state.admin.username=un;state.admin.phone=normPhone($('admPhone').value);
+ if(pin){state.admin.pinHash=pinHash('admin',pin);state.admin.def=false}
+ $('admPin').value='';save();refreshAll();alert('تم حفظ حساب المدير العام.');
+}
+function saveAccount(id){
+ const u=state.users.find(x=>x.id===id);if(!u)return;
+ const un=$('acc_u_'+id).value.trim(),pin=$('acc_p_'+id).value,ph=$('acc_t_'+id).value;
+ if(!un){alert('اكتب اسم المستخدم.');return}
+ if(un.toLowerCase()===String(state.admin.username).toLowerCase()||state.users.some(x=>x.id!==id&&String(x.username).toLowerCase()===un.toLowerCase())){alert('اسم المستخدم مستعمل. اختر اسمًا آخر.');return}
+ if(pin&&pin.length<4){alert('الرمز السري 4 أحرف أو أرقام على الأقل.');return}
+ u.username=un;u.phone=normPhone(ph);
+ if(pin){u.pinHash=pinHash(u.id,pin);u.def=false;sessionPins[id]=pin}
+ save();refreshAll();
+}
+async function genPins(){
+ if(!await askConfirm('سيتم تعيين رمز سري عشوائي جديد لكل مفوض، وسيحتاج كل مفوض إلى ملف إعداد جديد. متابعة؟'))return;
+ state.users.forEach(u=>{let p;do{p=String(Math.floor(1000+Math.random()*9000))}while(p==='1234');u.pinHash=pinHash(u.id,p);u.def=false;sessionPins[u.id]=p});
+ save();refreshAll();
+}
+function buildConfig(uidv){
+ const u=state.users.find(x=>x.id===uidv);
+ const offices=state.offices.filter(o=>o.userId===uidv);
+ const cids=new Set(offices.map(o=>o.centerId));
+ return {mfwcfg:1,at:new Date().toISOString(),managerPhone:state.admin.phone||'',
+  user:{id:u.id,name:u.name,username:u.username,pinHash:u.pinHash},
+  centers:state.centers.filter(c=>cids.has(c.id)),offices:offices,lists:state.lists,nextListId:state.nextListId};
+}
+async function sendConfig(id){
+ const u=state.users.find(x=>x.id===id);if(!u)return;
+ if(!state.offices.some(o=>o.userId===id)&&!await askConfirm('لا توجد مكاتب مسندة لهذا المفوض بعد. إنشاء الملف على أي حال؟'))return;
+ const json=JSON.stringify(buildConfig(id));
+ showSharePanel({title:'ملف إعداد '+u.name,note:'أرسل هذا النص أو الملف إلى المفوض عبر واتساب. في هاتفه: شاشة الدخول ← «أول استعمال على هاتف مفوض؟» ← الصق النص أو اختر الملف.',text:'MFWCFG:'+b64e(json),fileName:'mofawid_'+u.username+'.mfwcfg.json',fileText:json,wa:u.phone||''});
+}
+function sendCreds(id){
+ const u=state.users.find(x=>x.id===id);if(!u)return;
+ const pin=sessionPins[id]||(u.def?'1234':null);
+ const text='مرحبًا '+u.name+'\nحسابك في تطبيق المفوض الانتخابي:\nاسم المستخدم: '+u.username+'\nالرمز السري: '+(pin||'(سيصلك على حدة)')+'\nاستورد ملف الإعداد المرسل ثم ادخل بهذا الحساب.';
+ openWA(u.phone||'',text,'رسالة الحساب');
+}
+async function applyConfigText(t){
+ t=String(t||'').trim();let c;
+ try{const m=t.match(/MFWCFG:[A-Za-z0-9_\-]+/);if(m)t=b64d(m[0].slice(7));c=JSON.parse(t)}catch(e){alert('النص أو الملف غير صالح.');return}
+ if(!c||c.mfwcfg!==1||!c.user||!Array.isArray(c.offices)||!Array.isArray(c.lists)){alert('هذا ليس ملف إعداد مفوض صالحًا.');return}
+ const prev=peekStore(DLGKEY);
+ const pu=prev&&prev.users&&prev.users[0];
+ if(pu&&pu.id!==c.user.id&&!await askConfirm('يوجد على هذا الجهاز حساب المفوض '+(pu.name||'')+'. استبداله بحساب '+c.user.name+'؟'))return;
+ const keepRes=!!(pu&&pu.id===c.user.id);
+ const ids=new Set(c.offices.map(o=>o.id));
+ const ns={deviceMode:'delegate',centers:c.centers||[],offices:c.offices,users:[c.user],lists:c.lists,nextListId:c.nextListId||1,
+  results:keepRes?(prev.results||[]).filter(r=>ids.has(r.officeId)):[],participation:keepRes?(prev.participation||[]).filter(p=>ids.has(p.officeId)):[],
+  managerPhone:c.managerPhone||'',cfgAt:c.at||'',received:[],inbox:[]};
+ try{localStorage.setItem(DLGKEY,JSON.stringify(ns))}catch(e){alert('تعذر حفظ بيانات المفوض في هذا المتصفح.');return}
+ if(curKey===DLGKEY)state=ns;
+ showLogin();alert('تم استيراد ملف الإعداد. ادخل الآن باسم المستخدم '+c.user.username+'.');
+}
+function importConfigFile(input){const f=input.files&&input.files[0];if(!f)return;f.text().then(applyConfigText).finally(()=>{input.value=''})}
+function importConfigText(){const t=$('cfgText').value;if(!t.trim()){alert('الصق نص الإعداد أولًا.');return}applyConfigText(t).then(()=>{$('cfgText').value=''})}
+
+/* ---- نوافذ داخل الصفحة (بديل alert/confirm) وحفظ الملفات ومشاركتها ---- */
+function _overlay(){let r=document.getElementById('dlgRoot');if(!r){r=document.createElement('div');r.id='dlgRoot';r.style.cssText='position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:#0006;padding:14px;overflow:auto';document.body.appendChild(r)}return r}
+function _modal(inner){const r=_overlay();const b=document.createElement('div');b.style.cssText='background:#fff;border-radius:13px;padding:16px;max-width:520px;width:100%;box-shadow:0 8px 30px #0004;margin:auto;max-height:92vh;overflow:auto';b.innerHTML=inner;r.appendChild(b);r.style.display='flex';return b}
+function _closeModal(b){b.remove();const r=_overlay();if(!r.children.length)r.style.display='none'}
+window.alert=function(m){const b=_modal('<div style="white-space:pre-wrap;line-height:1.8;margin-bottom:12px">'+esc(m)+'</div><div class="row"><button class="m_ok">حسنًا</button></div>');b.querySelector('.m_ok').onclick=()=>_closeModal(b)};
+function askConfirm(m){return new Promise(res=>{const b=_modal('<div style="white-space:pre-wrap;line-height:1.8;margin-bottom:12px">'+esc(m)+'</div><div class="row"><button class="m_y green">نعم</button><button class="m_n light">إلغاء</button></div>');b.querySelector('.m_y').onclick=()=>{_closeModal(b);res(true)};b.querySelector('.m_n').onclick=()=>{_closeModal(b);res(false)}})}
+async function saveFile(name,data){
+ try{
+  if(typeof claude!=='undefined'&&claude&&claude.use){
+   const d=await claude.use('downloads');
+   if(!d){alert('الحفظ كملف غير متاح هنا. استعمل «نسخ النص».');return false}
+   await d.save({filename:name,data:data});return true;
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);return true;
+ }catch(e){if(e&&e.code==='declined')return false;alert('تعذر حفظ الملف'+(e&&e.code?' ('+e.code+')':'')+'. استعمل «نسخ النص».');return false}
+}
+function showSharePanel(o){
+ const useWa=o.wa!==undefined&&o.text.length<=1900;
+ const b=_modal('<h3 style="margin:0 0 8px">'+esc(o.title||'مشاركة')+'</h3>'+(o.note?'<p class="hint">'+esc(o.note)+'</p>':'')+'<textarea readonly rows="6" class="m_t" style="width:100%;padding:10px;border:1px solid #cbd5df;border-radius:8px;font:inherit;direction:ltr"></textarea><div class="row" style="margin-top:10px"><button class="m_c green">نسخ النص</button>'+(useWa?'<a class="m_w" target="_blank" rel="noopener" style="background:#16835b;color:#fff;border-radius:9px;padding:10px 13px;font-weight:bold;text-decoration:none;display:inline-block">فتح واتساب</a>':'')+(o.fileName?'<button class="m_f light">حفظ كملف</button>':'')+'<button class="m_x secondary">إغلاق</button></div>');
+ const ta=b.querySelector('.m_t');ta.value=o.text;
+ if(useWa)b.querySelector('.m_w').href='https://wa.me/'+(o.wa||'')+'?text='+encodeURIComponent(o.text);
+ const done=()=>{if(o.onDone)o.onDone()};
+ b.querySelector('.m_c').onclick=function(){
+  const ok=()=>{this.textContent='تم النسخ ✓';done()};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(o.text).then(ok,()=>{ta.select();try{document.execCommand('copy')}catch(e){}ok()});
+  else{ta.select();try{document.execCommand('copy')}catch(e){}ok()}
+ };
+ if(useWa)b.querySelector('.m_w').addEventListener('click',done);
+ if(o.fileName)b.querySelector('.m_f').onclick=()=>saveFile(o.fileName,o.fileText||o.text).then(ok=>{if(ok)done()});
+ b.querySelector('.m_x').onclick=()=>_closeModal(b);
+}
+function openWA(phone,text,title){
+ let w=null;try{w=window.open('https://wa.me/'+(phone||'')+'?text='+encodeURIComponent(text),'_blank')}catch(e){}
+ if(!w)showSharePanel({title:title||'رسالة واتساب',text:text,wa:phone||''});
+}
+
+/* ===================== إرسال النتائج (المفوض) ===================== */
+function orderedLists(type){return state.lists.filter(l=>l.type===type).sort((a,b)=>a.id-b.id)}
+function structHash(type){return hs(orderedLists(type).map(l=>l.id+':'+l.candidates.map(c=>c.id).join(',')).join('|'))}
+function resultToRec(r){
+ const ls=orderedLists(r.type);
+ return {o:r.officeId,y:r.type,t:r.updatedAt,h:structHash(r.type),
+  l:ls.map(l=>{const v=r.listVotes.find(x=>x.listId===l.id);return v?v.votes:null}),
+  c:ls.map(l=>l.candidates.map(c=>{const v=r.candidateVotes.find(x=>x.candidateId===c.id);return v?v.votes:null}))};
+}
+function collectItems(uidv,all){
+ const mine=new Set(state.offices.filter(o=>o.userId===uidv).map(o=>o.id));
+ const pend=x=>all||!x.sentAt||x.updatedAt>x.sentAt;
+ const items=[];
+ state.results.filter(r=>mine.has(r.officeId)&&pend(r)).forEach(r=>items.push({ref:r,rec:resultToRec(r)}));
+ (state.participation||[]).filter(p=>mine.has(p.officeId)&&pend(p)).forEach(p=>items.push({ref:p,rec:{o:p.officeId,y:'P',t:p.updatedAt,m:p.times}}));
+ return items;
+}
+function makeCode(u,recs){
+ const ds=JSON.stringify({v:1,u:u.id,at:new Date().toISOString(),r:recs});
+ return 'MFW1:'+b64e(JSON.stringify({d:ds,k:hs(u.pinHash+'|'+ds)}));
+}
+const CODE_LIMIT=1900;
+function buildPackages(uidv,all){
+ const u=state.users.find(x=>x.id===uidv);
+ const items=collectItems(uidv,all);const chunks=[];let cur=[];
+ items.forEach(it=>{
+  cur.push(it);
+  if(cur.length>1&&makeCode(u,cur.map(x=>x.rec)).length>CODE_LIMIT){const last=cur.pop();chunks.push(cur);cur=[last]}
+ });
+ if(cur.length)chunks.push(cur);
+ return chunks.map(ch=>({items:ch,n:ch.length,code:makeCode(u,ch.map(x=>x.rec))}));
+}
+let _chunks=[];
+function chunkText(i){
+ const me=state.users.find(u=>u.id===getSession().userId);
+ return 'نتائج '+me.name+' ('+(i+1)+'/'+_chunks.length+') — '+_chunks[i].n+' سجل\n'+_chunks[i].code;
+}
+function prepareSend(){
+ const s=getSession();if(!s||s.role!=='delegate')return;
+ _chunks=buildPackages(s.userId,$('sendAll').checked);
+ if(!_chunks.length){$('sendOut').innerHTML='<div class="notice">لا توجد نتائج جديدة للإرسال. احفظ نتائج المكاتب أولًا، أو فعّل «إعادة إرسال كل النتائج».</div>';return}
+ $('sendOut').innerHTML='<div class="notice">تم تجهيز '+_chunks.length+' رسالة. أرسل كل رسالة إلى المدير العام عبر واتساب.'+(state.managerPhone?'':' (لم يُحفظ رقم المدير بعد، سيطلب واتساب اختيار جهة الاتصال.)')+'</div>'+_chunks.map((c,i)=>'<div class="officeitem"><h3>الرسالة '+(i+1)+' من '+_chunks.length+' — '+c.n+' سجل</h3><div class="row"><button class="green" onclick="sendWA('+i+')">إرسال عبر واتساب</button><button class="light" onclick="copyChunk('+i+')">نسخ النص</button></div></div>').join('')+'<div class="row"><button onclick="shareAllFile()">مشاركة كل الرسائل كملف</button></div><p class="hint">تعني علامة «مرسلة» أنك فتحت واتساب أو نسخت الرسالة. تأكد من وصولها للمدير.</p>';
+}
+function markSent(list){const now=new Date().toISOString();list.forEach(i=>_chunks[i].items.forEach(it=>{it.ref.sentAt=now}));save();renderSendPage();renderDelegateDash()}
+function sendWA(i){openWA(state.managerPhone||'',chunkText(i),'رسالة النتائج');markSent([i])}
+function copyChunk(i){
+ const t=chunkText(i);
+ const done=()=>{markSent([i]);alert('تم نسخ النص. الصقه في محادثة المدير.')};
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,()=>{fallbackCopy(t);done()});else{fallbackCopy(t);done()}
+}
+function fallbackCopy(t){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()}
+function shareAllFile(){
+ const me=state.users.find(u=>u.id===getSession().userId);
+ const text=_chunks.map((c,i)=>chunkText(i)).join('\n\n');
+ showSharePanel({title:'كل رسائل النتائج',note:'انسخ النص والصقه في محادثة المدير على واتساب، أو احفظه كملف وأرسله.',text:text,fileName:'نتائج_'+me.username+'_'+new Date().toISOString().slice(0,10)+'.mfw.txt',fileText:text,onDone:()=>markSent(_chunks.map((_,i)=>i))});
+}
+function renderSendPage(){
+ const s=getSession();if(!s||s.role!=='delegate')return;
+ const mine=state.offices.filter(o=>o.userId===s.userId);
+ const cell=(o,t)=>state.results.some(r=>r.officeId===o.id&&r.type===t)?'✓':'—';
+ $('sendStatus').innerHTML='<table><thead><tr><th>المركز</th><th>المكتب</th><th>البلدية</th><th>الولائية</th><th>المشاركة</th><th>حالة الإرسال</th></tr></thead><tbody>'+mine.map(o=>{
+  const recs=[...state.results.filter(r=>r.officeId===o.id),...(state.participation||[]).filter(p=>p.officeId===o.id)];
+  let st='—';if(recs.length)st=recs.every(x=>x.sentAt&&x.sentAt>=x.updatedAt)?'<span class="pill">مرسلة</span>':'<span class="pill gray">بانتظار الإرسال</span>';
+  return `<tr><td>${esc(state.centers.find(c=>c.id===o.centerId)?.name||'')}</td><td>${esc(o.name)}</td><td>${cell(o,'APC')}</td><td>${cell(o,'APW')}</td><td>${(state.participation||[]).some(p=>p.officeId===o.id)?'✓':'—'}</td><td>${st}</td></tr>`}).join('')+'</tbody></table>';
+}
+function renderDelegateDash(){
+ const s=getSession();if(!s||s.role!=='delegate')return;
+ const me=state.users.find(u=>u.id===s.userId);if(!me)return;
+ const os=state.offices.filter(o=>o.userId===me.id);
+ const full=os.filter(o=>['APC','APW'].every(t=>state.results.some(r=>r.officeId===o.id&&r.type===t))).length;
+ const pend=collectItems(me.id,false).length;
+ $('delegateDash').innerHTML='<div class="card"><h2>مرحبًا '+esc(me.name)+'</h2><div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="stat"><span>مكاتبي</span><strong>'+os.length+'</strong></div><div class="stat"><span>نتائجها كاملة (بلدي + ولائي)</span><strong>'+full+'</strong></div><div class="stat"><span>سجلات بانتظار الإرسال</span><strong>'+pend+'</strong></div></div>'+(os.length?'':'<div class="notice">لا توجد مكاتب مسندة إليك. تواصل مع المدير العام.</div>')+(pend?'<div class="notice">لديك '+pend+' سجل لم يُرسل بعد إلى المدير العام. افتح «إرسال النتائج للمدير».</div>':'')+'</div>';
+}
+
+/* ===================== استلام النتائج وتجميعها (المدير) ===================== */
+function officeLabel(id){const o=state.offices.find(x=>x.id===id);return o?((state.centers.find(c=>c.id===o.centerId)?.name||'')+' / '+o.name):('مكتب '+id)}
+const okVote=v=>(Number.isInteger(v)&&v>=0)?v:null;
+function mergeCode(code){
+ let w,d;
+ try{w=JSON.parse(b64d(code.slice(5)));d=JSON.parse(w.d)}catch(e){return {ok:false,msg:'رمز تالف أو مقطوع. تأكد من نسخ الرسالة كاملة.'}}
+ const u=state.users.find(x=>x.id===d.u);
+ if(!u||!u.pinHash)return {ok:false,msg:'مفوض غير معروف.'};
+ if(hs(u.pinHash+'|'+w.d)!==w.k)return {ok:false,who:u.name,msg:'فشل التحقق من هوية المرسل: الرمز السري لا يطابق، أو تم تعديل الرسالة. أعد إرسال ملف الإعداد للمفوض إن غيّرت رمزه.'};
+ if(state.received.includes(w.k))return {ok:true,dup:true,who:u.name,msg:'مستلمة سابقًا'};
+ let nR=0,nOld=0,nSkip=0;const notes=[];
+ (d.r||[]).forEach(rec=>{
+  const o=state.offices.find(x=>x.id===rec.o);
+  if(!o||o.userId!==u.id){notes.push(officeLabel(rec.o)+': غير مسند لهذا المفوض');nSkip++;return}
+  if(rec.y==='P'){
+   const ex=(state.participation||[]).find(p=>p.officeId===rec.o);
+   if(ex&&ex.updatedAt>rec.t){nOld++;return}
+   const times={};Object.keys(rec.m||{}).forEach(k=>{const n=okVote(rec.m[k]);if(n!==null)times[k]=n});
+   const entry={officeId:rec.o,times,updatedAt:rec.t,updatedBy:u.name,receivedAt:new Date().toISOString()};
+   if(ex)Object.assign(ex,entry);else state.participation.push(entry);nR++;return;
+  }
+  if(rec.y!=='APC'&&rec.y!=='APW'){nSkip++;return}
+  if(rec.h!==structHash(rec.y)){notes.push(officeLabel(rec.o)+' ('+rec.y+'): قوائم أو مترشحو هذا النوع تغيّروا عند المدير بعد إعداد المفوض، أرسل له ملف إعداد جديدًا');nSkip++;return}
+  const ls=orderedLists(rec.y);
+  const ex=state.results.find(r=>r.officeId===rec.o&&r.type===rec.y);
+  if(ex&&ex.status==='مراجع'){notes.push(officeLabel(rec.o)+' ('+rec.y+'): تمت مراجعته سابقًا فلم يُستبدل');nSkip++;return}
+  if(ex&&ex.updatedAt>rec.t){nOld++;return}
+  const entry={officeId:rec.o,type:rec.y,
+   listVotes:ls.map((l,i)=>({listId:l.id,votes:okVote((rec.l||[])[i])})),
+   candidateVotes:[].concat(...ls.map((l,i)=>l.candidates.map((c,j)=>({candidateId:c.id,votes:okVote(((rec.c||[])[i]||[])[j])})))),
+   status:'أولي',updatedAt:rec.t,updatedBy:u.name,receivedAt:new Date().toISOString()};
+  if(ex)Object.assign(ex,entry);else state.results.push(entry);nR++;
+ });
+ state.received.push(w.k);if(state.received.length>3000)state.received=state.received.slice(-2000);
+ return {ok:true,who:u.name,n:nR,old:nOld,skip:nSkip,notes,changed:nR>0};
+}
+function processCodes(text){
+ const codes=[...new Set(text.match(/MFW1:[A-Za-z0-9_\-]+/g)||[])];
+ const box=$('recvReport');
+ if(!codes.length){box.innerHTML='<div class="notice">لم أجد أي رمز نتائج في النص أو الملفات. تأكد من لصق الرسالة كاملة بما فيها السطر الذي يبدأ بـ MFW1.</div>';return}
+ const reps=codes.map(mergeCode);
+ const now=new Date().toISOString();
+ reps.forEach(r=>{if(r.dup)return;state.inbox.unshift({at:now,who:r.who||'—',ok:r.ok,n:r.n||0,old:r.old||0,skip:r.skip||0,msg:r.ok?(r.notes||[]).join(' | '):r.msg})});
+ state.inbox=state.inbox.slice(0,300);
+ save();refreshAll();
+ const tot=reps.reduce((a,r)=>a+(r.n||0),0),bad=reps.filter(r=>!r.ok).length,dup=reps.filter(r=>r.dup).length;
+ $('recvReport').innerHTML='<div class="notice" style="border-color:'+(bad?'#b42318':'#16835b')+'"><b>تم تحليل '+codes.length+' رسالة:</b> '+tot+' سجل أُضيف إلى النتائج'+(dup?' — '+dup+' مستلمة سابقًا':'')+(bad?' — '+bad+' مرفوضة':'')+'</div>'+reps.map(r=>'<div class="officeitem"><b>'+(r.ok?(r.dup?'↺':'✓'):'✗')+' '+esc(r.who||'مجهول')+'</b> — '+(r.ok?(r.dup?'مستلمة سابقًا':(r.n+' سجل مضاف'+(r.old?'، '+r.old+' أقدم من الموجود':'')+(r.skip?'، '+r.skip+' متجاهل':''))):esc(r.msg))+((r.notes||[]).length?'<br><span class="hint">'+r.notes.map(esc).join('<br>')+'</span>':'')+'</div>').join('');
+ return {tot,bad,dup,codes:codes.length};
+}
+function receiveText(){const t=$('recvText').value;if(t.trim())processCodes(t)}
+async function receiveFiles(input){
+ const fs=[...(input.files||[])];if(!fs.length)return;
+ let all='';for(const f of fs){try{all+='\n'+await f.text()}catch(e){}}
+ input.value='';processCodes(all);
+}
+function renderReceive(){
+ if(role()!=='admin')return;
+ $('recvStatus').innerHTML='<table><thead><tr><th>المفوض</th><th>المكاتب</th><th>مكاتب نتائجها كاملة</th><th>آخر استلام</th></tr></thead><tbody>'+state.users.map(u=>{
+  const os=state.offices.filter(o=>o.userId===u.id);
+  const full=os.filter(o=>['APC','APW'].every(t=>state.results.some(r=>r.officeId===o.id&&r.type===t))).length;
+  const ids=new Set(os.map(o=>o.id));
+  const last=state.results.filter(r=>ids.has(r.officeId)&&r.receivedAt).map(r=>r.receivedAt).sort().pop();
+  return `<tr><td>${esc(u.name)}</td><td>${os.length}</td><td>${full} / ${os.length}${os.length&&full===os.length?' <span class="pill">مكتمل</span>':''}</td><td>${last?new Date(last).toLocaleString('fr-DZ'):'—'}</td></tr>`}).join('')+'</tbody></table>';
+ $('recvLog').innerHTML=state.inbox.length?'<table><thead><tr><th>الوقت</th><th>المفوض</th><th>الحالة</th><th>ملاحظات</th></tr></thead><tbody>'+state.inbox.slice(0,60).map(x=>`<tr><td>${new Date(x.at).toLocaleString('fr-DZ')}</td><td>${esc(x.who)}</td><td>${x.ok?'<span class="pill">'+x.n+' سجل</span>':'<span class="pill" style="background:#fdecea;color:#b42318">مرفوضة</span>'}</td><td>${esc(x.msg||'')}</td></tr>`).join('')+'</tbody></table>':'<p class="hint">لم يُستلم شيء بعد.</p>';
+}
+
+/* ===================== الإرسال المباشر (db مشتركة) ===================== */
+let _unsubInbox=null,_pend=[],_merging=false;
+function hasClaude(){return !!window._fsdb}
+async function sendDirect(){
+ const sess=getSession();if(!sess||sess.role!=='delegate')return;
+ const me=state.users.find(u=>u.id===sess.userId);if(!me)return;
+ _chunks=buildPackages(sess.userId,$('sendAll').checked);
+ if(!_chunks.length){alert('لا توجد نتائج جديدة للإرسال. احفظ نتائج المكاتب أولًا، أو فعّل «إعادة إرسال كل النتائج».');return}
+ try{
+  const db=hasClaude()?window._fsdb:null;
+  const uid=db?('u'+me.id):null;
+  if(!db||!uid){alert('الإرسال المباشر غير متاح (تحقق من الاتصال بالإنترنت). استعمل «تجهيز رسائل واتساب».');return}
+  const ref=db.doc('inbox/'+uid);const snap=await ref.get();
+  const old=(snap.exists&&snap.data().items)||[];
+  const now=new Date().toISOString();
+  await ref.set({u:me.id,name:me.name,at:now,items:old.concat(_chunks.map(c=>({c:c.code,t:now})))});
+  const n=_chunks.reduce((a,c)=>a+c.n,0);
+  markSent(_chunks.map((_,i)=>i));
+  alert('تم إرسال '+n+' سجل إلى المدير العام مباشرة.');
+ }catch(e){
+  alert((e&&e.code==='permission-denied')?'قواعد قاعدة البيانات تمنع الإرسال. أخبر المدير.':'تعذر الإرسال المباشر'+(e&&e.code?' ('+e.code+')':'')+'. استعمل رسائل واتساب.');
+ }
+}
+function isReceivedCode(c){try{return state.received.includes(JSON.parse(b64d(c.slice(5))).k)}catch(e){return false}}
+function renderInboxBar(){
+ let b=document.getElementById('inboxBar');
+ if(!b){b=document.createElement('div');b.id='inboxBar';b.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:120;background:#0b6b4a;color:#fff;border-radius:12px;padding:12px;box-shadow:0 6px 20px #0005;display:none;gap:10px;align-items:center;justify-content:space-between';document.body.appendChild(b)}
+ if(role()!=='admin'||!_pend.length){b.style.display='none';return}
+ const who=[...new Set(_pend.map(p=>p.name||'مفوض'))].join('، ');
+ b.innerHTML='<span>🔔 <b>لديك '+_pend.length+' رسالة في الانتظار</b> من '+esc(who)+'</span><button class="light" style="white-space:nowrap">إظهار الرسالة</button>';
+ b.querySelector('button').onclick=showPending;b.style.display='flex';
+}
+function previewCode(code){
+ let w,d;try{w=JSON.parse(b64d(code.slice(5)));d=JSON.parse(w.d)}catch(e){return {ok:false,msg:'رسالة تالفة.'}}
+ const u=state.users.find(x=>x.id===d.u);
+ if(!u||!u.pinHash)return {ok:false,msg:'مفوض غير معروف.'};
+ if(hs(u.pinHash+'|'+w.d)!==w.k)return {ok:false,who:u.name,msg:'فشل التحقق من هوية المرسل (الرمز السري لا يطابق أو الرسالة معدّلة).'};
+ const recs=(d.r||[]).map(rec=>{
+  const lab=officeLabel(rec.o);
+  if(rec.y==='P'){const ks=Object.keys(rec.m||{});const k=ks[ks.length-1];return {lab,ty:'المشاركة',txt:k?('آخر ساعة مسجلة '+k+': '+rec.m[k]):'—'}}
+  const sum=(rec.l||[]).reduce((a,v)=>a+(Number.isInteger(v)?v:0),0);
+  return {lab,ty:rec.y==='APC'?'البلدية':'الولائية',txt:'مجموع أصوات القوائم: '+sum};
+ });
+ return {ok:true,who:u.name,at:d.at,recs};
+}
+async function clearInboxItems(list){
+ try{
+  const db=window._fsdb;const done=new Set(list.map(p=>p.c));
+  for(const id of [...new Set(list.map(p=>p.doc))]){
+   const ref=db.doc('inbox/'+id);const snap=await ref.get();if(!snap.exists)continue;
+   await ref.update({items:(snap.data().items||[]).filter(it=>!done.has(it.c))});
+  }
+ }catch(e){console.warn(e)}
+}
+function showPending(){
+ if(!_pend.length)return;
+ const items=_pend.slice();
+ const b=_modal('<h3 style="margin:0 0 8px">رسائل في الانتظار ('+items.length+')</h3><div class="m_list"></div><div class="row" style="margin-top:10px"><button class="m_all green">تحديث الكل</button><button class="m_x secondary">إغلاق</button></div>');
+ const box=b.querySelector('.m_list');
+ const left=()=>box.children.length;
+ items.forEach(it=>{
+  const pv=previewCode(it.c);const card=document.createElement('div');card.className='officeitem';
+  card.innerHTML='<b>'+esc(pv.who||it.name||'مفوض')+'</b> <span class="hint">'+(it.t?new Date(it.t).toLocaleString('fr-DZ'):'')+'</span>'+(pv.ok?'<div class="tablewrap"><table><thead><tr><th>المكتب</th><th>النوع</th><th>ملخص</th></tr></thead><tbody>'+pv.recs.map(r=>'<tr><td>'+esc(r.lab)+'</td><td>'+r.ty+'</td><td>'+esc(r.txt)+'</td></tr>').join('')+'</tbody></table></div>':'<div class="notice" style="border-color:#b42318">'+esc(pv.msg)+'</div>')+'<div class="row" style="margin-top:8px">'+(pv.ok?'<button class="m_u green">تحديث</button>':'')+'<button class="m_c light">إلغاء</button></div>';
+  box.appendChild(card);
+  const finish=()=>{card.remove();_pend=_pend.filter(p=>p.c!==it.c);renderInboxBar();if(!left())_closeModal(b)};
+  const u=card.querySelector('.m_u');
+  if(u)u.onclick=async()=>{u.disabled=true;processCodes(it.c);await clearInboxItems([it]);finish()};
+  card.querySelector('.m_c').onclick=async()=>{
+   if(!await askConfirm('إلغاء هذه الرسالة؟ لن تُدمج نتائجها، وسيحتاج المفوض إلى إرسالها من جديد.'))return;
+   state.inbox.unshift({at:new Date().toISOString(),who:pv.who||it.name||'—',ok:false,n:0,old:0,skip:0,msg:'ألغاها المدير قبل الدمج'});save();renderReceive();
+   await clearInboxItems([it]);finish();
+  };
+ });
+ b.querySelector('.m_all').onclick=async()=>{const ok=items.filter(it=>previewCode(it.c).ok);if(ok.length)processCodes(ok.map(i=>i.c).join('\n'));await clearInboxItems(items.filter(it=>ok.includes(it)));_pend=_pend.filter(p=>!ok.some(i=>i.c===p.c));renderInboxBar();_closeModal(b)};
+ b.querySelector('.m_x').onclick=()=>_closeModal(b);
+}
+async function subscribeInbox(){
+ if(_unsubInbox||role()!=='admin')return;
+ const st=document.getElementById('directStatus');
+ let db=null;try{db=hasClaude()?window._fsdb:null}catch(e){}
+ if(!db){if(st)st.textContent='الإرسال المباشر غير متاح في هذا العرض. استعمل لصق رسائل واتساب أدناه.';return}
+ if(st)st.textContent='الإرسال المباشر: متصل. ستظهر هنا نتائج المفوضين فور وصولها.';
+ _unsubInbox=db.collection('inbox').onSnapshot(snap=>{
+  const all=[];
+  snap.docs.forEach(d=>{const x=d.data()||{};(x.items||[]).forEach(it=>{if(it&&it.c&&!isReceivedCode(it.c))all.push({doc:d.id,c:it.c,t:it.t,name:x.name})})});
+  _pend=all;renderInboxBar();
+  if(state.autoMerge&&_pend.length)mergePending();
+ },e=>{if(st)st.textContent='تعذر الاتصال بالإرسال المباشر'+(e&&e.code?' ('+e.code+')':'')+'.'});
+}
+function stopInbox(){if(_unsubInbox){try{_unsubInbox()}catch(e){}_unsubInbox=null}_pend=[];renderInboxBar()}
+async function mergePending(){
+ if(_merging||!_pend.length)return;_merging=true;
+ const list=_pend.slice();_pend=[];renderInboxBar();
+ try{
+  const r=processCodes(list.map(p=>p.c).join('\n'));
+  await clearInboxItems(list);
+  if(r)alert('تم دمج '+r.tot+' سجل من '+r.codes+' رسالة'+(r.bad?' — '+r.bad+' مرفوضة (راجع سجل الاستلام)':'')+'.');
+ }finally{_merging=false}
+}
+function showPage(id){
+  const _r=role();
+  if(_r==='delegate'&&['setup','assign','lists','receive','accounts'].includes(id))id='dashboard';
+  if(_r==='admin'&&id==='send')id='dashboard';
+  const allPages=document.querySelectorAll('section.page');
+  const target=document.getElementById(id);
+  if(!target || !target.classList.contains('page')) return false;
+  allPages.forEach(function(page){
+    page.classList.remove('active');
+    page.hidden=true;
+    page.setAttribute('aria-hidden','true');
+    page.style.display='none';
+    page.style.visibility='hidden';
+    page.style.opacity='0';
+    page.style.height='0';
+    page.style.overflow='hidden';
+  });
+  target.hidden=false;
+  target.classList.add('active');
+  target.setAttribute('aria-hidden','false');
+  target.style.display='block';
+  target.style.visibility='visible';
+  target.style.opacity='1';
+  target.style.height='auto';
+  target.style.overflow='visible';
+  // عند فتح أي شاشة، نخفي أزرار القائمة السبعة ونظهر زر العودة فقط.
+  const nav=document.getElementById('nav');
+  if(nav) nav.style.display=(id==='dashboard'&&window._navOpen?'flex':'none');
+  const nb=document.getElementById('navBar');
+  if(nb) nb.style.display=(id==='dashboard'?'block':'none');
+  const back=document.getElementById('backBar');
+  if(back) back.style.display=(id==='dashboard'?'none':'block');
+  window.scrollTo(0,0);
+  return false;
+}
+function showHome(){window._navOpen=false;showPage('dashboard')}
+function toggleNav(){window._navOpen=!window._navOpen;showPage('dashboard')}
+
+async function logout(){if(!await askConfirm('هل تريد تسجيل الخروج؟'))return;clearSession();stopInbox();window._navOpen=false;location.reload()}
+async function closeApp(){if(await askConfirm('هل تريد إغلاق التطبيق؟')){alert('قد يمنع المتصفح إغلاق نفسه. يمكنك إغلاق علامة التبويب من قائمة المتصفح. بياناتك المحلية محفوظة.');try{window.close()}catch(e){}}}
+function esc(s){return String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+$('editCenter').addEventListener('change',()=>updateEditOffices());
+$('editOffice').addEventListener('change',()=>{const o=state.offices.find(x=>x.id===+$('editOffice').value);$('editOfficeName').value=o?.name||'';$('editRegistered').value=o?.registered??0});
+$('assignCenter').addEventListener('change',updateAssignOffices);
+
+(function(){
+ try{const x=JSON.parse(localStorage.getItem(DBKEY)||'null');if(x&&x.deviceMode){localStorage.setItem(DLGKEY,JSON.stringify(x));localStorage.removeItem(DBKEY)}}catch(e){}
+ const ss=getSession();if(ss&&ss.role==='delegate'&&localStorage.getItem(DLGKEY))curKey=DLGKEY;
+})();
+load();
+if(!Array.isArray(state.participation))state.participation=[];
+seedFLN();
+ensureAccounts();
+if(!state.deviceMode)normalizeDemoOfficeNames();
+save();
+hideAllPages();
+if(!state.centers.length&&!state.deviceMode)createDemo();else refreshAll();
+(function(){
+ const ss=getSession();
+ const ok=ss&&((ss.role==='admin'&&!state.deviceMode&&state.admin)||(ss.role==='delegate'&&state.users.some(u=>u.id===ss.userId)));
+ if(ok){$('loginScreen').style.display='none';refreshAll();showPage('dashboard');startCloud(ss)}
+ else{clearSession();showLogin();showPage('dashboard')}
+})();
+</script>
+</body>
+</html>
