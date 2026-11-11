@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تجربة متابعة نتائج الانتخابات 2026</title>
+<style>
+:root{--blue:#174a78;--light:#eef4f8;--green:#16784a;--red:#a83232;--line:#d7e0e8}
+*{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#18232d;font-family:Tahoma,Arial,sans-serif}
+header{background:var(--blue);color:white;padding:18px 14px;text-align:center}
+header h1{font-size:20px;margin:0 0 6px}header p{margin:0;font-size:13px;opacity:.9}
+main{max-width:900px;margin:auto;padding:14px}
+.tabs{display:flex;gap:8px;margin-bottom:14px}.tabs button{flex:1;padding:12px;border:1px solid var(--blue);border-radius:10px;background:white;color:var(--blue);font-weight:bold}
+.tabs button.active{background:var(--blue);color:white}
+.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px #00000008}
+h2{font-size:18px;margin:0 0 12px;color:var(--blue)}h3{font-size:16px;margin:0 0 10px}
+label{display:block;font-size:14px;font-weight:bold;margin:8px 0 5px}
+select,input{width:100%;padding:11px;border:1px solid #b9c8d5;border-radius:8px;font-size:16px;background:white}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.party{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px}
+.party-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+.party-head strong{font-size:16px}.party-head span{font-size:12px;color:#5b6874}
+.totalbox{background:var(--light);padding:10px;border-radius:9px;margin:8px 0}
+.candidates{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.candidate{border:1px solid var(--line);border-radius:9px;padding:7px;text-align:center;background:#fff}
+.candidate small{display:block;color:#66727d;font-size:11px;margin-bottom:5px}
+.count{font-size:20px;font-weight:bold;min-height:25px}
+.controls{display:flex;justify-content:center;gap:8px;margin-top:5px}
+.controls button{width:38px;height:34px;border:0;border-radius:8px;font-size:20px;font-weight:bold}
+.plus{background:#dff3e8;color:#11653d}.minus{background:#fbe7e7;color:#a22}
+button{cursor:pointer}
+.action{width:100%;padding:13px;border:0;border-radius:10px;background:var(--green);color:white;font-weight:bold;font-size:16px;margin-top:12px}
+.secondary{background:#e9eef3;color:#233746}
+.note{font-size:12px;color:#66727d;line-height:1.7}
+.status{padding:10px;border-radius:8px;background:#edf7f1;color:#17613d;margin-top:10px;display:none}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.stat{background:var(--light);border-radius:10px;padding:12px;text-align:center}
+.stat b{display:block;font-size:23px;color:var(--blue);margin-top:5px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th,td{padding:8px 5px;border-bottom:1px solid var(--line);text-align:center}
+th{background:var(--light)}
+details{margin-top:10px;border:1px solid var(--line);border-radius:9px;padding:9px}
+summary{font-weight:bold;cursor:pointer}
+.hidden{display:none!important}
+@media(max-width:420px){.candidates{grid-template-columns:repeat(3,minmax(0,1fr))}.row{grid-template-columns:1fr}.candidate{padding:6px}}
+.err{border-color:#a83232!important;background:#fdeeee!important}
+.candidates{grid-template-columns:repeat(3,minmax(0,1fr))!important}.candidate small{min-height:28px;word-break:break-word}
+.hidden{display:none}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<header><h1>متابعة نتائج الانتخابات المحلية</h1><p>بلدية حمالة — 28 نوفمبر 2026 | نسخة تجريبية</p></header>
+<main>
+<div id="cloudBadge" style="font-size:12px;padding:6px 12px;border-radius:20px;background:#e9eef3;display:inline-block;margin-bottom:10px"></div>
+<div id="sessionBar" class="panel hidden" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px">
+<span>المستخدم: <b id="who"></b></span><button class="secondary" style="padding:8px 14px;border:0;border-radius:8px;font-weight:bold" onclick="logout()">خروج</button></div>
+<section id="login" class="panel hidden"><h2>تسجيل الدخول</h2>
+<label>المستخدم</label><select id="loginUser"></select>
+<label>الرمز السري</label><input type="password" inputmode="numeric" id="loginPin" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+<div id="loginErr" style="color:#a83232;font-weight:bold;margin-top:8px;min-height:18px"></div>
+<button class="action" onclick="doLogin()">دخول</button></section>
+<section id="rep" class="hidden">
+<div class="panel hidden" id="repEmpty"><p class="note" style="font-size:14px;margin:0">لم يوزّع المدير أي مكتب عليك بعد. تواصل معه ثم أعد فتح الصفحة.</p></div>
+<div class="panel" id="repPanel">
+<h2>تسجيل نتائج مكتب التصويت</h2>
+<div class="row">
+<div><label>المركز الانتخابي</label><select id="centre" onchange="fillOffices()"></select></div>
+<div><label>مكتب التصويت</label><select id="office"></select></div>
+</div>
+<p class="note">يسجل الممثل مجموع أصوات كل قائمة في الخانة المستقلة، ثم يضغط (+) مرة واحدة عن كل صوت للمترشح. يمكن استعمال (−) لتصحيح الضغط بالخطأ.</p>
+<div class="party"><h3>بيانات المكتب</h3>
+<div class="row"><div><label>عدد المسجلين (يحدده المدير)</label><input type="number" id="registered" readonly placeholder="لم يحدده المدير" style="background:#eef1f4"></div>
+<div><label>الأصوات المعبر عنها</label><input type="number" min="0" step="1" id="expressed" oninput="updateOfficeCheck()"></div></div>
+<label>الأصوات الملغاة</label><input type="number" min="0" step="1" id="cancelled" oninput="updateOfficeCheck()">
+<div id="officeWarn" class="totalbox" style="font-weight:bold;min-height:20px"></div></div>
+<div id="partyArea"></div>
+<button class="action" onclick="saveResult()">حفظ وإرسال نتائج هذا المكتب</button>
+<div id="saveStatus" class="status"></div>
+</div>
+<div class="panel" id="repState">
+<h3>حالة هذا المكتب</h3><div id="officeState" class="note">لم يتم حفظ نتائج لهذا المكتب بعد.</div>
+</div>
+</section>
+<section id="mgr" class="hidden">
+<div class="panel">
+<h2>لوحة قيادة المدير العام</h2>
+<div class="stats">
+<div class="stat">مجموع أصوات القائمة 1<b id="sumL1">0</b></div>
+<div class="stat">مجموع أصوات القائمة 2<b id="sumL2">0</b></div>
+<div class="stat">المكاتب المسجلة<b id="savedCount">0 / 24</b></div>
+<div class="stat">المكاتب المتبقية<b id="remaining">24</b></div>
+<div class="stat">مجموع المسجلين<b id="sumReg">0</b></div>
+<div class="stat">مجموع المعبر عنها<b id="sumExp">0</b></div>
+<div class="stat">مجموع الملغاة<b id="sumCan">0</b></div>
+<div class="stat">نسبة المشاركة<b id="turnout">—</b></div>
+</div>
+<h3 style="margin-top:18px">ملخص أصوات المترشحين</h3>
+<div id="candidateSummary"></div>
+</div>
+<div class="panel">
+<h3>أسماء القوائم والمترشحين</h3>
+<p class="note">عدّل اسم كل قائمة وكل مترشح؛ يُحفظ التعديل تلقائياً ويظهر في واجهة الممثل وفي الملخص.</p>
+<div id="namesEditor"></div>
+<button class="action secondary" onclick="resetNames()">إعادة الأسماء الافتراضية</button>
+</div>
+<div class="panel">
+<h3>الحسابات</h3>
+<p class="note">يمكنك تغيير اسم كل مستخدم ورمزه السري (الرمز الافتراضي للمدير 1111، ممثل 1: 2222، ممثل 2: 3333).</p>
+<div id="usersEditor"></div>
+<button class="action secondary" onclick="addRep()">+ إضافة ممثل</button>
+</div>
+<div class="panel">
+<h3>توزيع المكاتب على الممثلين</h3>
+<p class="note">اختر الممثل المسؤول عن كل مكتب، وحدّد عدد المسجلين فيه. الممثل لا يرى إلا مكاتبه ولا يستطيع تعديل عدد المسجلين.</p>
+<div id="assignSummary" class="totalbox" style="font-weight:bold"></div>
+<div id="assignArea"></div>
+</div>
+<div class="panel">
+<h3>إدارة المراكز والمكاتب</h3>
+<p class="note">يمكن إضافة مكتب رجال أو نساء داخل المركز، أو حذف آخر مكتب منه. الحذف لا يتم إذا كانت للمكتب نتائج محفوظة.</p>
+<div id="manageOffices"></div>
+<label>إضافة مركز انتخابي</label>
+<div class="row"><input id="newCentreName" placeholder="اسم المركز الجديد"><button class="action" style="margin:0" onclick="addCentre()">إضافة المركز</button></div>
+</div>
+<div class="panel">
+<h3>النتائج حسب المكتب</h3>
+<div id="officeSummary" class="note">لا توجد نتائج محفوظة بعد.</div>
+<button class="action secondary" onclick="exportCSV()">تصدير النتائج إلى CSV</button>
+<button class="action secondary" onclick="clearAll()">مسح بيانات التجربة</button>
+<p class="note">هذه النسخة التجريبية تحفظ البيانات على نفس الهاتف/المتصفح فقط. لا يوجد إرسال فعلي عبر الإنترنت إلى جهاز المدير بعد.</p>
+</div>
+</section>
+</main>
+<script>
+// === إعداد Firebase: الصق هنا قيمتي apiKey و appId من إعدادات تطبيق الويب (Project settings > Your apps) ===
+const FIREBASE_CONFIG={apiKey:"",authDomain:"election26-8eea6.firebaseapp.com",projectId:"election26-8eea6",appId:""};
+const CLOUD_ON=!!(FIREBASE_CONFIG.apiKey&&FIREBASE_CONFIG.appId&&window.firebase);
+let db=null,cloudReady=!CLOUD_ON,cloudEmpty=false,cfgTimer=null;
+const defaultCentres=[
+{name:"بلوط الزاوش",men:2,women:2},{name:"بومعزة",men:3,women:3},
+{name:"الإخوة بوعاج",men:2,women:2},{name:"بريك",men:2,women:2},
+{name:"بوالنمر",men:1,women:1},{name:"بودابة",men:1,women:1},{name:"بومزبر",men:1,women:1}
+];
+let centres=JSON.parse(localStorage.getItem("election_centres_2026")||"null")||defaultCentres;
+const parties=[{name:"حزب جبهة التحرير الوطني",num:1},{name:"حزب التجمع الوطني الديمقراطي",num:2}];
+let current=[new Array(22).fill(0),new Array(22).fill(0)];
+let records=JSON.parse(localStorage.getItem("election_demo_2026")||"{}");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const defNames=()=>[0,1].map(()=>Array.from({length:22},(_,i)=>"مترشح "+(i+1)));
+let candNames=defNames(),listNames=parties.map(p=>p.name);
+try{let a=JSON.parse(localStorage.getItem("election_names_2026")||"null");if(a&&a.cand&&a.cand.length===2&&a.cand.every(x=>x.length===22)){candNames=a.cand;listNames=a.list}}catch(e){}
+let users=[{id:"mgr",name:"المدير",pin:"1111"},{id:"rep1",name:"ممثل 1",pin:"2222"},{id:"rep2",name:"ممثل 2",pin:"3333"}];
+try{let a=JSON.parse(localStorage.getItem("election_users_2026")||"null");if(a&&a.length>=1&&a.some(u=>u.id==="mgr"))users=a}catch(e){}
+let assign={},regMap={};
+try{assign=JSON.parse(localStorage.getItem("election_assign_2026")||"{}");regMap=JSON.parse(localStorage.getItem("election_reg_2026")||"{}")}catch(e){}
+let session=localStorage.getItem("election_session_2026")||"";
+const userById=id=>users.find(u=>u.id===id);
+function persistUsers(){localStorage.setItem("election_users_2026",JSON.stringify(users));pushConfig()}
+function persistAssign(){localStorage.setItem("election_assign_2026",JSON.stringify(assign));localStorage.setItem("election_reg_2026",JSON.stringify(regMap));pushConfig()}
+function fillLoginUsers(){let sel=document.getElementById("loginUser"),old=sel.value;sel.innerHTML="";users.forEach(u=>{let o=document.createElement("option");o.value=u.id;o.textContent=u.name;sel.appendChild(o)});if(old)sel.value=old}
+function doLogin(){if(!cloudReady){document.getElementById("loginErr").textContent="جارٍ تحميل البيانات من الخادم… أعد المحاولة بعد لحظات.";return}let u=userById(document.getElementById("loginUser").value),pin=document.getElementById("loginPin").value.trim();if(!u||u.pin!==pin){document.getElementById("loginErr").textContent="الرمز السري غير صحيح.";return}session=u.id;localStorage.setItem("election_session_2026",session);document.getElementById("loginPin").value="";document.getElementById("loginErr").textContent="";applySession()}
+function logout(){session="";localStorage.removeItem("election_session_2026");applySession()}
+function applySession(){let u=userById(session);document.getElementById("login").classList.toggle("hidden",!!u);document.getElementById("sessionBar").classList.toggle("hidden",!u);if(!u){show("");fillLoginUsers();return}if(u.id==="mgr"&&cloudEmpty)pushConfig();document.getElementById("who").textContent=u.name;show(u.id==="mgr"?"mgr":"rep")}
+function visibleOffices(){return session==="mgr"?allOffices():allOffices().filter(o=>assign[o.id]===session)}
+function updateAssignSummary(){let reps=users.filter(u=>u.id!=="mgr"),cnt={},all=allOffices();all.forEach(o=>{if(assign[o.id])cnt[assign[o.id]]=(cnt[assign[o.id]]||0)+1});document.getElementById("assignSummary").textContent=reps.map(u=>u.name+": "+(cnt[u.id]||0)).join(" | ")+" | غير موزع: "+all.filter(o=>!assign[o.id]).length+" | بدون عدد مسجلين: "+all.filter(o=>regMap[o.id]===undefined).length}
+function renderAssign(){let root=document.getElementById("assignArea");root.innerHTML="";let reps=users.filter(u=>u.id!=="mgr");centres.forEach(c=>{let d=document.createElement("details");d.innerHTML=`<summary>${esc(c.name)}</summary>`;allOffices().filter(o=>o.centre===c.name).forEach(o=>{let w=document.createElement("div");w.className="row";w.style.marginTop="8px";let a=document.createElement("div");a.innerHTML=`<label>${esc(o.office)} — ${o.gender}</label>`;let sel=document.createElement("select");sel.innerHTML='<option value="">غير موزع</option>'+reps.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join("");sel.value=assign[o.id]||"";sel.onchange=()=>{if(sel.value)assign[o.id]=sel.value;else delete assign[o.id];persistAssign();updateAssignSummary()};a.appendChild(sel);let b=document.createElement("div");b.innerHTML="<label>عدد المسجلين</label>";let inp=document.createElement("input");inp.type="number";inp.min="0";inp.step="1";inp.value=regMap[o.id]!==undefined?regMap[o.id]:"";inp.onchange=()=>{let v=inp.value;if(v===""){delete regMap[o.id]}else if(Number(v)>=0&&Number.isInteger(Number(v))){regMap[o.id]=Number(v);let r=records[o.id];if(r){r.registered=Number(v);localStorage.setItem("election_demo_2026",JSON.stringify(records));cloudSaveRecord(o.id);if((r.expressed||0)+(r.cancelled||0)>r.registered)alert("تنبيه: نتائج "+o.centre+" — "+o.office+" المحفوظة: المعبر عنها + الملغاة تتجاوز عدد المسجلين الجديد.")}}else{alert("أدخل عدداً صحيحاً موجباً.");inp.value=regMap[o.id]!==undefined?regMap[o.id]:"";return}persistAssign();updateAssignSummary()};b.appendChild(inp);w.appendChild(a);w.appendChild(b);d.appendChild(w)});root.appendChild(d)});updateAssignSummary()}
+function renderUsers(){let root=document.getElementById("usersEditor");root.innerHTML="";users.forEach((u,i)=>{let w=document.createElement("div");w.className="row";w.style.marginTop="8px";let a=document.createElement("div");a.innerHTML="<label>الاسم</label>";let n=document.createElement("input");n.value=u.name;n.onchange=()=>{u.name=n.value.trim()||u.name;n.value=u.name;persistUsers();fillLoginUsers();renderAssign();if(session===u.id)document.getElementById("who").textContent=u.name};a.appendChild(n);let b=document.createElement("div");b.innerHTML="<label>الرمز السري</label>";let pn=document.createElement("input");pn.value=u.pin;pn.onchange=()=>{if(!pn.value.trim()){alert("الرمز السري لا يمكن أن يكون فارغاً.");pn.value=u.pin;return}u.pin=pn.value.trim();persistUsers()};b.appendChild(pn);w.appendChild(a);w.appendChild(b);if(u.id!=="mgr"){let x=document.createElement("button");x.textContent="حذف هذا الممثل";x.className="secondary";x.style.cssText="margin-top:6px;padding:8px 12px;border:0;border-radius:8px;font-weight:bold;color:#a83232";x.onclick=()=>delRep(i);w.appendChild(x)}root.appendChild(w)})}
+function addRep(){let n=1+Math.max(0,...users.map(u=>{let m=/^rep(\d+)$/.exec(u.id);return m?Number(m[1]):0}));let u={id:"rep"+n,name:"ممثل "+n,pin:String(1000+Math.floor(Math.random()*9000))};users.push(u);persistUsers();fillLoginUsers();renderUsers();renderAssign();alert("أُضيف "+u.name+" — رمزه السري: "+u.pin+" (يمكنك تغييره من الحقل).")}
+function delRep(i){let u=users[i];if(!u||u.id==="mgr")return;let n=Object.keys(assign).filter(k=>assign[k]===u.id).length;if(!confirm("حذف "+u.name+"؟"+(n?" ستصبح مكاتبه ("+n+") غير موزعة.":"")))return;Object.keys(assign).forEach(k=>{if(assign[k]===u.id)delete assign[k]});users.splice(i,1);persistAssign();persistUsers();fillLoginUsers();renderUsers();renderAssign()}
+function persistNames(){localStorage.setItem("election_names_2026",JSON.stringify({cand:candNames,list:listNames}));pushConfig()}
+function setCandName(p,i,v){candNames[p][i]=v.trim()||("مترشح "+(i+1));persistNames()}
+function setListName(p,v){listNames[p]=v.trim()||parties[p].name;persistNames()}
+function resetNames(){if(!confirm("إعادة جميع أسماء القوائم والمترشحين إلى الأسماء الافتراضية؟"))return;candNames=defNames();listNames=parties.map(p=>p.name);persistNames();renderNames();refreshNames()}
+function refreshNames(){parties.forEach((p,pi)=>{let l=document.getElementById("ln"+pi);if(l)l.textContent=listNames[pi];for(let i=0;i<22;i++){let c=document.getElementById(`cn${pi}_${i}`);if(c)c.textContent=(i+1)+". "+candNames[pi][i]}})}
+function renderNames(){let root=document.getElementById("namesEditor");root.innerHTML="";parties.forEach((p,pi)=>{let d=document.createElement("details");d.innerHTML=`<summary>القائمة رقم ${p.num}</summary>`;let w=document.createElement("div");w.innerHTML="<label>اسم القائمة</label>";let li=document.createElement("input");li.value=listNames[pi];li.oninput=()=>setListName(pi,li.value);w.appendChild(li);d.appendChild(w);candNames[pi].forEach((n,i)=>{let x=document.createElement("div");x.innerHTML=`<label>مترشح ${i+1}</label>`;let inp=document.createElement("input");inp.value=n;inp.oninput=()=>setCandName(pi,i,inp.value);x.appendChild(inp);d.appendChild(x)});root.appendChild(d)})}
+function updateOfficeCheck(){let g=k=>document.getElementById(k);let reg=g("registered").value,ex=g("expressed").value,ca=g("cancelled").value,box=g("officeWarn");["registered","expressed","cancelled"].forEach(k=>g(k).classList.remove("err"));box.textContent="";box.style.color="#a83232";let msgs=[],ok=[];
+if(reg!==""&&(ex!==""||ca!=="")){let tot=Number(ex||0)+Number(ca||0);if(tot>Number(reg)){["registered","expressed","cancelled"].forEach(k=>g(k).classList.add("err"));msgs.push("المعبر عنها + الملغاة ("+tot+") تتجاوز عدد المسجلين ("+reg+") بـ "+(tot-Number(reg)))}else ok.push("المعبر عنها + الملغاة = "+tot+" ≤ المسجلين "+reg)}
+let l0=document.getElementById("listTotal0"),l1=document.getElementById("listTotal1");if(ex!==""&&l0&&l1&&(l0.value!==""||l1.value!=="")){let ls=Number(l0.value||0)+Number(l1.value||0);if(ls>Number(ex)){g("expressed").classList.add("err");msgs.push("مجموع أصوات القائمتين ("+ls+") يتجاوز الأصوات المعبر عنها ("+ex+") بـ "+(ls-Number(ex)))}else ok.push("مجموع القائمتين = "+ls+" ≤ المعبر عنها "+ex)}
+if(msgs.length){box.textContent="تنبيه: "+msgs.join(" — ")}else if(ok.length){box.style.color="#17613d";box.textContent="✓ "+ok.join(" — ")}}
+function allOffices(){let a=[];centres.forEach(c=>{for(let i=1;i<=c.men+c.women;i++)a.push({centre:c.name,office:"مكتب "+i,id:c.name+"_"+i,gender:i<=c.men?"رجال":"نساء"})});return a}
+function persistCentres(){localStorage.setItem("election_centres_2026",JSON.stringify(centres));pushConfig()}
+
+function show(which){document.getElementById("rep").classList.toggle("hidden",which!=="rep");document.getElementById("mgr").classList.toggle("hidden",which!=="mgr");if(which==="mgr"){renderManager();renderOfficeManager();renderNames();renderAssign();renderUsers()}else if(which==="rep"){refreshCentres();refreshNames();updateOfficeState()}}
+function init(){
+renderParties();fillLoginUsers();applySession();
+}
+function refreshCentres(){let c=document.getElementById("centre"),old=c.value;c.innerHTML="";let names=[...new Set(visibleOffices().map(o=>o.centre))];names.forEach(n=>{let o=document.createElement("option");o.value=n;o.textContent=n;c.appendChild(o)});if(names.includes(old))c.value=old;fillOffices()}
+function fillOffices(){let cn=document.getElementById("centre").value,s=document.getElementById("office"),old=s.value;s.innerHTML="";let vis=visibleOffices().filter(o=>o.centre===cn);vis.forEach(o=>{let op=document.createElement("option");op.value=o.id;op.textContent=o.office+" — "+o.gender;s.appendChild(op)});if(vis.some(o=>o.id===old))s.value=old;let has=visibleOffices().length>0;["repPanel","repState"].forEach(k=>document.getElementById(k).classList.toggle("hidden",!has));document.getElementById("repEmpty").classList.toggle("hidden",has||session==="mgr");loadCurrent()}
+function renderParties(){let root=document.getElementById("partyArea");root.innerHTML="";parties.forEach((p,pi)=>{let box=document.createElement("div");box.className="party";box.innerHTML=`<div class="party-head"><strong>القائمة رقم ${p.num}: <em id="ln${pi}" style="font-style:normal">${esc(listNames[pi])}</em></strong><span>22 مترشحاً</span></div><label>مجموع أصوات القائمة رقم ${p.num}</label><input type="number" min="0" step="1" id="listTotal${pi}" placeholder="أدخل مجموع أصوات القائمة"> <div class="totalbox">مجموع أصوات المترشحين: <b id="candidateTotal${pi}">0</b><div id="warning${pi}" style="font-weight:bold;color:#a83232;margin-top:6px"></div></div><div class="candidates" id="grid${pi}"></div>`;root.appendChild(box);let grid=box.querySelector("#grid"+pi);for(let i=0;i<22;i++){let el=document.createElement("div");el.className="candidate";el.innerHTML=`<small id="cn${pi}_${i}">${i+1}. ${esc(candNames[pi][i])}</small><div class="count" id="count${pi}_${i}">0</div><div class="controls"><button class="minus" onclick="changeVote(${pi},${i},-1)">−</button><button class="plus" onclick="changeVote(${pi},${i},1)">+</button></div>`;grid.appendChild(el)}})}
+function changeVote(p,i,d){if(d>0){let f=document.getElementById("listTotal"+p).value,sum=current[p].reduce((a,b)=>a+b,0);if(f!==""&&sum+1>Number(f)){document.getElementById("warning"+p).textContent="لا يمكن الزيادة: أصوات المترشحين بلغت مجموع أصوات القائمة ("+f+").";if(navigator.vibrate)navigator.vibrate(120);return}}current[p][i]=Math.max(0,current[p][i]+d);document.getElementById(`count${p}_${i}`).textContent=current[p][i];updateTotals()}
+function updateTotals(){updateOfficeCheck();current.forEach((arr,p)=>{let sum=arr.reduce((a,b)=>a+b,0);document.getElementById("candidateTotal"+p).textContent=sum;let field=document.getElementById("listTotal"+p),limit=Number(field.value||0);field.classList.toggle("err",field.value!==""&&sum>limit);document.getElementById("warning"+p).textContent=field.value!==""&&sum>limit?"تنبيه: أصوات المترشحين تتجاوز مجموع أصوات القائمة بـ "+(sum-limit)+" صوتاً.":"";});}
+function loadCurrent(){let id=document.getElementById("office").value;if(!id)return;let r=records[id];current=r?[r.votes[0].slice(),r.votes[1].slice()]:[new Array(22).fill(0),new Array(22).fill(0)];current.forEach((arr,p)=>arr.forEach((v,i)=>document.getElementById(`count${p}_${i}`).textContent=v));document.getElementById("listTotal0").value=r?r.listTotals[0]:"";document.getElementById("listTotal1").value=r?r.listTotals[1]:"";["expressed","cancelled"].forEach(k=>document.getElementById(k).value=r&&r[k]!==undefined?r[k]:"");document.getElementById("registered").value=regMap[id]!==undefined?regMap[id]:"";updateOfficeCheck();[0,1].forEach(p=>document.getElementById("listTotal"+p).oninput=updateTotals);updateTotals();updateOfficeState();document.getElementById("saveStatus").style.display="none"}
+function saveResult(){let id=document.getElementById("office").value;
+let su=userById(session);if(!su||su.id==="mgr"||assign[id]!==session){alert("هذا المكتب غير موزّع عليك.");return}
+if(regMap[id]===undefined){alert("لم يحدد المدير عدد المسجلين لهذا المكتب بعد، لا يمكن الحفظ.");return}
+let vals=["registered","expressed","cancelled"].map(k=>document.getElementById(k).value);
+if(vals.some(x=>x===""||Number(x)<0||!Number.isInteger(Number(x)))){alert("يرجى إدخال عدد المسجلين والأصوات المعبر عنها والملغاة بأعداد صحيحة (ويمكن إدخال صفر).");return}
+vals=vals.map(Number);vals[0]=Number(regMap[id]);
+if(vals[1]+vals[2]>vals[0]){alert("لا يمكن حفظ النتائج: الأصوات المعبر عنها ("+vals[1]+") + الملغاة ("+vals[2]+") = "+(vals[1]+vals[2])+" تتجاوز عدد المسجلين ("+vals[0]+").");return}
+let totals=[0,1].map(p=>document.getElementById("listTotal"+p).value);if(totals.some(x=>x===""||Number(x)<0||!Number.isInteger(Number(x)))){alert("يرجى إدخال مجموع أصوات القائمتين بأعداد صحيحة، ويمكن إدخال صفر.");return}
+if(Number(totals[0])+Number(totals[1])>vals[1]){alert("لا يمكن حفظ النتائج: مجموع أصوات القائمتين ("+(Number(totals[0])+Number(totals[1]))+") يتجاوز الأصوات المعبر عنها ("+vals[1]+").");return}
+for(let p=0;p<2;p++){let distributed=current[p].reduce((a,b)=>a+b,0);if(distributed>Number(totals[p])){alert("لا يمكن حفظ النتائج: مجموع أصوات مترشحي القائمة رقم "+(p+1)+" ("+distributed+") يتجاوز مجموع أصوات القائمة ("+totals[p]+").");return;}}
+records[id]={centre:document.getElementById("centre").selectedOptions[0].textContent,office:document.getElementById("office").selectedOptions[0].textContent,by:session,listTotals:totals.map(Number),registered:vals[0],expressed:vals[1],cancelled:vals[2],votes:current.map(a=>a.slice()),updated:new Date().toLocaleString("ar-DZ")};localStorage.setItem("election_demo_2026",JSON.stringify(records));cloudSaveRecord(id);let st=document.getElementById("saveStatus");st.textContent="تم حفظ نتائج "+records[id].centre+" — "+records[id].office+" على هذا الجهاز."+(db?" وسيُرسل إلى المدير تلقائياً عند توفر الاتصال.":"");st.style.display="block";updateOfficeState()}
+function updateOfficeState(){let id=document.getElementById("office").value;let r=records[id];document.getElementById("officeState").textContent=r?`هذا المكتب لديه نتائج محفوظة. آخر تعديل: ${r.updated}`:"لم يتم حفظ نتائج لهذا المكتب بعد."}
+function renderManager(){let offices=allOffices();let saved=offices.filter(o=>records[o.id]).length;let T={reg:0,exp:0,can:0},l=[0,0],votes=[Array(22).fill(0),Array(22).fill(0)];Object.values(records).forEach(r=>{T.reg+=r.registered||0;T.exp+=r.expressed||0;T.can+=r.cancelled||0;r.listTotals.forEach((v,p)=>l[p]+=v);r.votes.forEach((arr,p)=>arr.forEach((v,i)=>votes[p][i]+=v))});document.getElementById("sumL1").textContent=l[0];document.getElementById("sumReg").textContent=T.reg;document.getElementById("sumExp").textContent=T.exp;document.getElementById("sumCan").textContent=T.can;document.getElementById("turnout").textContent=T.reg?((T.exp+T.can)/T.reg*100).toFixed(1)+"%":"—";document.getElementById("sumL2").textContent=l[1];document.getElementById("savedCount").textContent=saved+" / "+offices.length;document.getElementById("remaining").textContent=offices.length-saved;
+let out="";parties.forEach((p,pi)=>{out+=`<details open><summary>${esc(listNames[pi])} — القائمة ${p.num}</summary><table><thead><tr><th>المترشح</th><th>مجموع الأصوات</th></tr></thead><tbody>`;votes[pi].forEach((v,i)=>out+=`<tr><td>${i+1}. ${esc(candNames[pi][i])}</td><td>${v}</td></tr>`);out+="</tbody></table></details>"});document.getElementById("candidateSummary").innerHTML=out;
+let rows=offices.filter(o=>records[o.id]);document.getElementById("officeSummary").innerHTML=rows.length?`<table><thead><tr><th>المركز</th><th>المكتب</th><th>القائمة 1</th><th>القائمة 2</th><th>المسجلون</th><th>المعبر عنها</th><th>الملغاة</th><th>الممثل</th></tr></thead><tbody>${rows.map(o=>`<tr><td>${o.centre}</td><td>${o.office}</td><td>${records[o.id].listTotals[0]}</td><td>${records[o.id].listTotals[1]}</td><td>${records[o.id].registered??"—"}</td><td>${records[o.id].expressed??"—"}</td><td>${records[o.id].cancelled??"—"}</td><td>${esc((userById(records[o.id].by)||{}).name||"—")}</td></tr>`).join("")}</tbody></table>`:"لا توجد نتائج محفوظة بعد."}
+function exportCSV(){let offices=allOffices();let lines=["المركز,المكتب,القائمة 1,القائمة 2,المسجلون,المعبر عنها,الملغاة,القائمة1 مترشحون,القائمة2 مترشحون"];offices.filter(o=>records[o.id]).forEach(o=>{let r=records[o.id];lines.push([o.centre,o.office,r.listTotals[0],r.listTotals[1],r.registered??"",r.expressed??"",r.cancelled??"",r.votes[0].join("|"),r.votes[1].join("|")].map(x=>'"'+String(x).replaceAll('"','""')+'"').join(","))});let blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"});let a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="نتائج_انتخابات_حمالة_2026.csv";a.click();URL.revokeObjectURL(a.href)}
+function renderOfficeManager(){let root=document.getElementById("manageOffices");root.innerHTML="";centres.forEach((c,i)=>{let d=document.createElement("details");d.open=true;d.innerHTML=`<summary>${c.name} — ${c.men+c.women} مكاتب (رجال ${c.men}، نساء ${c.women})</summary><div class="row"><button class="action" style="margin:6px 0" onclick="addOffice(${i},'men')">+ مكتب رجال</button><button class="action" style="margin:6px 0" onclick="addOffice(${i},'women')">+ مكتب نساء</button></div><div class="row"><button class="action secondary" style="margin:0" onclick="removeOffice(${i},'men')">حذف آخر مكتب رجال</button><button class="action secondary" style="margin:0" onclick="removeOffice(${i},'women')">حذف آخر مكتب نساء</button></div><button class="action secondary" onclick="renameCentre(${i})">تعديل اسم المركز</button><button class="action" style="background:#a83232" onclick="deleteCentre(${i})">حذف المركز</button>`;root.appendChild(d)})}
+function addOffice(i,gender){centres[i][gender]++;persistCentres();refreshCentres();renderManager();renderOfficeManager()}
+function removeOffice(i,gender){let c=centres[i];if(c[gender]<1){alert("لا يوجد مكتب من هذه الفئة لحذفه.");return;}let ordinal=gender==="men"?c.men:(c.men+c.women);let id=c.name+"_"+ordinal;if(records[id]){alert("لا يمكن حذف هذا المكتب لأن نتائجه محفوظة. احذف بياناته أو صححها أولاً من المدير.");return;}if(!confirm("تأكيد حذف آخر مكتب من فئة "+(gender==="men"?"الرجال":"النساء")+"؟"))return;c[gender]--;persistCentres();refreshCentres();renderManager();renderOfficeManager()}
+function addCentre(){let name=document.getElementById("newCentreName").value.trim();if(!name){alert("اكتب اسم المركز.");return;}if(centres.some(c=>c.name===name)){alert("هذا المركز موجود بالفعل.");return;}centres.push({name,men:0,women:0});document.getElementById("newCentreName").value="";persistCentres();refreshCentres();renderManager();renderOfficeManager()}
+function renameCentre(i){let name=prompt("الاسم الجديد للمركز:",centres[i].name);if(!name||!name.trim())return;name=name.trim();if(centres.some((c,j)=>j!==i&&c.name===name)){alert("اسم المركز مستخدم.");return;}if(Object.keys(records).some(id=>id.startsWith(centres[i].name+"_"))){alert("لا يمكن تغيير الاسم بعد حفظ نتائج لهذا المركز في هذه النسخة التجريبية.");return;}let oldN=centres[i].name;[assign,regMap].forEach(m=>Object.keys(m).forEach(k=>{if(k.startsWith(oldN+"_")){m[name+k.slice(oldN.length)]=m[k];delete m[k]}}));persistAssign();centres[i].name=name;persistCentres();refreshCentres();renderManager();renderOfficeManager()}
+function deleteCentre(i){let c=centres[i];if(Object.keys(records).some(id=>id.startsWith(c.name+"_"))){alert("لا يمكن حذف مركز لديه نتائج محفوظة.");return;}if(!confirm("تأكيد حذف المركز "+c.name+"؟"))return;centres.splice(i,1);persistCentres();refreshCentres();renderManager();renderOfficeManager()}
+function clearAll(){if(!confirm(db?"سيتم حذف جميع النتائج المسجلة لدى الجميع (على الخادم). هل تريد المتابعة؟":"هل تريد مسح جميع بيانات النتائج من هذا الجهاز؟"))return;records={};localStorage.removeItem("election_demo_2026");if(db)cloudClear();loadCurrent();renderManager()}
+/* ===== طبقة Firebase (Firestore) ===== */
+const rid=id=>encodeURIComponent(id);
+function setBadge(t,c){let b=document.getElementById("cloudBadge");if(b){b.textContent=t;b.style.background=c||"#e9eef3"}}
+function pushConfig(){if(!db)return;clearTimeout(cfgTimer);cfgTimer=setTimeout(()=>{db.collection("hamala2026_config").doc("main").set({centres,users,assign,regMap,cand:{0:candNames[0],1:candNames[1]},list:listNames,updated:Date.now()}).then(()=>{cloudEmpty=false}).catch(e=>console.error(e))},500)}
+function cloudSaveRecord(id){if(!db)return;let r=records[id];if(!r)return;let rest=Object.assign({},r);delete rest.votes;let doc=Object.assign({id:id},rest,{votes0:r.votes[0],votes1:r.votes[1]});db.collection("hamala2026_results").doc(rid(id)).set(doc).then(()=>{let st=document.getElementById("saveStatus");if(session!=="mgr"&&st&&st.style.display==="block")st.textContent="تم إرسال نتائج "+r.centre+" — "+r.office+" إلى المدير ✓"}).catch(e=>console.error(e))}
+function cloudClear(){db.collection("hamala2026_results").get().then(q=>{let b=db.batch();q.forEach(d=>b.delete(d.ref));return b.commit()}).catch(e=>alert("تعذر الحذف من الخادم: "+e.message))}
+function applyConfig(d){if(d.centres)centres=d.centres;if(d.users&&d.users.length>=1&&d.users.some(u=>u.id==="mgr"))users=d.users;assign=d.assign||{};regMap=d.regMap||{};if(d.cand&&d.cand[0]&&d.cand[1]&&d.cand[0].length===22&&d.cand[1].length===22)candNames=[d.cand[0],d.cand[1]];if(d.list&&d.list.length===2)listNames=d.list;
+localStorage.setItem("election_centres_2026",JSON.stringify(centres));localStorage.setItem("election_users_2026",JSON.stringify(users));localStorage.setItem("election_assign_2026",JSON.stringify(assign));localStorage.setItem("election_reg_2026",JSON.stringify(regMap));localStorage.setItem("election_names_2026",JSON.stringify({cand:candNames,list:listNames}))}
+function afterConfig(changedOffices){fillLoginUsers();if(session==="mgr"){let m=document.getElementById("mgr");if(!m.contains(document.activeElement)){renderManager();renderOfficeManager();renderNames();renderAssign();renderUsers()}}else if(userById(session)){if(changedOffices)refreshCentres();else{let o=document.getElementById("office").value;document.getElementById("registered").value=regMap[o]!==undefined?regMap[o]:"";updateOfficeCheck()}refreshNames()}}
+function startCloud(){
+ db.collection("hamala2026_config").doc("main").onSnapshot(snap=>{
+  if(snap.metadata.hasPendingWrites)return;
+  let before=visibleOffices().map(o=>o.id).join();
+  if(snap.exists){applyConfig(snap.data());cloudEmpty=false}
+  else if(!snap.metadata.fromCache){cloudEmpty=true;if(session==="mgr")pushConfig()}
+  else return;
+  cloudReady=true;afterConfig(before!==visibleOffices().map(o=>o.id).join());
+ },e=>{console.error(e);setBadge("خطأ في الاتصال بالخادم: "+e.code,"#fbe7e7");cloudReady=true});
+ db.collection("hamala2026_results").onSnapshot({includeMetadataChanges:true},snap=>{
+  let m={},pending=0;snap.forEach(d=>{let x=d.data();x.votes=[x.votes0,x.votes1];delete x.votes0;delete x.votes1;m[x.id]=x;if(d.metadata.hasPendingWrites)pending++});
+  records=m;localStorage.setItem("election_demo_2026",JSON.stringify(records));
+  if(pending>0)setBadge("بانتظار الإرسال ("+pending+") — سيُرسل عند توفر الاتصال","#fff3d6");
+  else if(snap.metadata.fromCache)setBadge("غير متصل — يعمل بالبيانات المحفوظة","#fff3d6");
+  else setBadge("متزامن مع الخادم ✓","#dff3e8");
+  if(session==="mgr"){if(!document.getElementById("mgr").classList.contains("hidden"))renderManager()}else if(userById(session))updateOfficeState();
+ },e=>{console.error(e);setBadge("خطأ في الاتصال بالخادم: "+e.code,"#fbe7e7")});
+ setTimeout(()=>{if(!cloudReady){cloudReady=true;setBadge("تعذر الوصول إلى الخادم — بيانات محفوظة على الجهاز","#fff3d6")}},8000);
+}
+if(CLOUD_ON){setBadge("جارٍ الاتصال بالخادم…");try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{}).then(startCloud)}catch(e){console.error(e);db=null;cloudReady=true;setBadge("وضع محلي — خطأ في إعداد Firebase","#fbe7e7")}}
+else setBadge("وضع محلي — لم يُضبط Firebase بعد");
+
+init();
+</script></body></html>
