@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>متابعة نتائج الانتخابات</title>
+<style>
+:root{--blue:#174a78;--light:#eef4f8;--green:#16784a;--red:#a83232;--line:#d7e0e8}
+*{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#18232d;font-family:Tahoma,Arial,sans-serif}
+header{background:var(--blue);color:white;padding:18px 14px;text-align:center}
+header h1{font-size:20px;margin:0 0 6px}header p{margin:0;font-size:13px;opacity:.9}
+main{max-width:900px;margin:auto;padding:14px}
+.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px #00000008}
+h2{font-size:18px;margin:0 0 12px;color:var(--blue)}h3{font-size:16px;margin:0 0 10px}
+label{display:block;font-size:14px;font-weight:bold;margin:8px 0 5px}
+select,input{width:100%;padding:11px;border:1px solid #b9c8d5;border-radius:8px;font-size:16px;background:white}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.party{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px}
+.party-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+.party-head strong{font-size:16px}.party-head span{font-size:12px;color:#5b6874}
+.totalbox{background:var(--light);padding:10px;border-radius:9px;margin:8px 0}
+.candidates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.candidate{border:1px solid var(--line);border-radius:9px;padding:7px;text-align:center;background:#fff}
+.candidate small{display:block;color:#66727d;font-size:11px;margin-bottom:5px;min-height:28px;word-break:break-word}
+.count{font-size:20px;font-weight:bold;min-height:25px}
+.controls{display:flex;justify-content:center;gap:8px;margin-top:5px}
+.controls button{width:38px;height:34px;border:0;border-radius:8px;font-size:20px;font-weight:bold}
+.plus{background:#dff3e8;color:#11653d}.minus{background:#fbe7e7;color:#a22}
+button{cursor:pointer}
+.action{width:100%;padding:13px;border:0;border-radius:10px;background:var(--green);color:white;font-weight:bold;font-size:16px;margin-top:12px}
+.secondary{background:#e9eef3;color:#233746}
+.danger{background:var(--red)!important;color:#fff!important}
+.note{font-size:12px;color:#66727d;line-height:1.7}
+.status{padding:10px;border-radius:8px;background:#edf7f1;color:#17613d;margin-top:10px;display:none}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.stat{background:var(--light);border-radius:10px;padding:12px;text-align:center;font-size:14px}
+.stat b{display:block;font-size:23px;color:var(--blue);margin-top:5px}
+.stat small{display:block;color:#66727d;margin-top:2px}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th,td{padding:8px 5px;border-bottom:1px solid var(--line);text-align:center}
+th{background:var(--light)}
+details{margin-top:10px;border:1px solid var(--line);border-radius:9px;padding:9px}
+summary{font-weight:bold;cursor:pointer}
+.hidden{display:none!important}
+.err{border-color:#a83232!important;background:#fdeeee!important}
+@media(max-width:420px){.row{grid-template-columns:1fr}.candidate{padding:6px}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<header><h1 id="hTitle">متابعة نتائج الانتخابات</h1><p id="hSub">نسخة نموذجية لكل البلديات</p></header>
+<main>
+<div id="cloudBadge" style="font-size:12px;padding:6px 12px;border-radius:20px;background:#e9eef3;display:inline-block;margin-bottom:10px"></div>
+
+<section id="gen" class="panel hidden">
+<h2>إنشاء نسخة جديدة لمترشح</h2>
+<p class="note">لكل مترشح رابط خاص ونتائج مستقلة لا تختلط بغيره. الرمز = <b>رمز الحزب (3 أحرف لاتينية)</b> + <b>رقم المترشح</b> + <b>اسم البلدية بالحروف اللاتينية</b>، مثل <b dir="ltr">rnd01-hamala</b>. اسم البلدية ضروري لأن رمزاً مثل <span dir="ltr">rnd01</span> قد يتكرر في بلديات أخرى.</p>
+<div id="genForm" class="hidden">
+<label>كلمة سر الإنشاء</label><input type="password" id="genPass" autocomplete="off">
+<div class="row"><div><label>رمز الحزب (3 أحرف)</label><input id="genParty" maxlength="3" dir="ltr" placeholder="rnd" autocomplete="off"></div>
+<div><label>رقم المترشح</label><input id="genNum" maxlength="2" inputmode="numeric" dir="ltr" placeholder="01" autocomplete="off"></div></div>
+<label>اسم البلدية بالحروف اللاتينية</label><input id="genCommune" dir="ltr" placeholder="hamala" autocomplete="off">
+<div id="genMsg" style="font-weight:bold;min-height:20px;margin-top:8px"></div>
+<button class="action" onclick="makeLink()">إنشاء الرابط</button>
+<div id="genResult" class="hidden">
+<label>رابط المترشح</label><input id="genLink" readonly dir="ltr" onclick="this.select()">
+<div class="row"><button class="action secondary" onclick="copyGenLink()">نسخ الرابط</button><button class="action" style="background:#128c7e" onclick="shareGenLink()">إرسال عبر واتساب</button></div>
+<button class="action" onclick="openGenLink()">فتح الرابط وإعداد النسخة الآن</button>
+</div></div>
+<details id="genProv"><summary>لصاحب التطبيق: كلمة سر الإنشاء</summary>
+<p class="note">كلمة السر تمنع غير المأذون لهم من إنشاء نسخ جديدة. اختر كلمة قوية (8 خانات فأكثر) ثم نزّل النسخة المحمية وارفعها على GitHub بنفس اسم الملف. تُحفظ بصمتها فقط داخل الملف، لا الكلمة نفسها.</p>
+<div id="provOldBox" class="hidden"><label>كلمة السر الحالية</label><input type="password" id="provOld" autocomplete="off"></div>
+<label>كلمة السر الجديدة</label><input type="password" id="provPass" autocomplete="new-password">
+<label>تأكيد كلمة السر</label><input type="password" id="provPass2" autocomplete="new-password">
+<button class="action" onclick="downloadProtected()">تنزيل النسخة المحمية بكلمة سر</button>
+</details>
+<details><summary>لدي رمز فريق بالفعل</summary>
+<label>رمز الفريق</label><input id="genExisting" dir="ltr" placeholder="rnd01-hamala" autocomplete="off">
+<div id="genExMsg" style="color:#a83232;font-weight:bold;min-height:18px"></div>
+<button class="action secondary" onclick="enterExisting()">دخول</button>
+<button class="action secondary" onclick="openCode('default')">فتح النسخة الافتراضية القائمة (default)</button>
+</details>
+</section>
+<div id="noCloud" class="hidden" style="background:#fdeeee;color:#a83232;border-radius:10px;padding:12px;font-weight:bold;margin-bottom:12px;line-height:1.8">⚠ هذا الهاتف غير متصل بالخادم: لن تصل نتائجك إلى المدير تلقائياً. افتح «رابط الممثلين» الكامل الذي أرسله لك المدير (وليس عنوان الصفحة فقط)، على متصفح Chrome. يمكنك مؤقتاً إرسال النتائج عبر واتساب.</div>
+<section id="loading" class="panel hidden"><p class="note" style="font-size:14px;margin:0">جارٍ تحميل البيانات من الخادم…</p></section>
+
+<section id="notReady" class="panel hidden"><p class="note" style="font-size:15px;margin:0;line-height:2">لم يتم تفعيل هذا التطبيق بعد. تواصل مع المدير ثم أعد فتح الرابط الذي سيرسله لك.</p></section>
+
+<!-- ===== إعداد بلدية جديدة ===== -->
+<section id="setup" class="panel hidden">
+<h2>إعداد بلدية جديدة</h2>
+<div id="setupPassBox" class="hidden"><label>كلمة سر الإنشاء (يعطيها لك صاحب التطبيق)</label><input type="password" id="setPass" autocomplete="off"></div>
+<div id="setupRepWarn" class="hidden" style="background:#fdeeee;color:#a83232;border-radius:8px;padding:10px;font-weight:bold;margin-bottom:8px;line-height:1.8">⚠ هذه الصفحة غير متصلة بالخادم. إن كنت ممثلاً فلا تنشئ شيئاً هنا: افتح «رابط الممثلين» الكامل الذي أرسله لك المدير (يحتوي في آخره على ‎&amp;fb=‎) على متصفح Chrome، ثم ادخل برمزك.</div>
+<p class="note">هذه الصفحة للمدير فقط. أدخل معطيات البلدية مرة واحدة فينشئ التطبيق المراكز والمكاتب والقوائم والمترشحين والحسابات، وتستطيع تعديل كل شيء لاحقاً من لوحة المدير.<br>رمز البلدية في الرابط: <b id="bidShow"></b></p>
+<label>اسم البلدية</label><input id="setName" placeholder="مثال: بلدية حمالة">
+<div class="row"><div><label>نوع الاقتراع</label><input id="setElection" value="الانتخابات المحلية"></div>
+<div><label>تاريخ الاقتراع</label><input id="setDate" placeholder="مثال: 28 نوفمبر 2026"></div></div>
+<div class="row"><div><label>عدد المراكز الانتخابية</label><input type="number" id="setCentres" min="1" value="5"></div>
+<div><label>عدد الممثلين</label><input type="number" id="setReps" min="0" value="2"></div></div>
+<div class="row"><div><label>إجمالي مكاتب الرجال (في كل المراكز)</label><input type="number" id="setMen" min="0" value="5"></div>
+<div><label>إجمالي مكاتب النساء (في كل المراكز)</label><input type="number" id="setWomen" min="0" value="5"></div></div>
+<p class="note">تُوزَّع المكاتب على المراكز بالتساوي تقريباً (لكل مركز مكتب واحد على الأقل). المراكز تختلف في عدد مكاتبها حسب موقعها، فعدّل كل مركز بعد الإنشاء من «إدارة المراكز والمكاتب»، أو حمّل ملف المراكز من الخيار أدناه.</p>
+<div class="row"><div><label>عدد القوائم</label><input type="number" id="setLists" min="1" value="2"></div>
+<div><label>عدد المترشحين في كل قائمة</label><input type="number" id="setCands" min="1" value="15"></div></div>
+<details><summary>أو حمّل ملفات جاهزة (اختياري)</summary>
+<p class="note">صيغ مقبولة: CSV أو Excel. إذا حمّلت ملفاً يُستعمل بدل الأعداد المكتوبة أعلاه للمراكز أو للقوائم.</p>
+<label>ملف المراكز والمكاتب (المركز | مكاتب الرجال | مكاتب النساء)</label><input type="file" id="fileCentresSetup" accept=".csv,.txt,.xlsx,.xls" onchange="pickSetupFile('centres',this)">
+<div id="stCentresSetup" class="note"></div>
+<label>ملف القوائم والمترشحين (القائمة | المترشح | * للمتابَع، اختياري)</label><input type="file" id="fileListsSetup" accept=".csv,.txt,.xlsx,.xls" onchange="pickSetupFile('lists',this)">
+<div id="stListsSetup" class="note"></div>
+<div class="row"><button class="action secondary" onclick="downloadTemplate('centres')">نموذج ملف المراكز</button><button class="action secondary" onclick="downloadTemplate('lists')">نموذج ملف القوائم</button></div>
+</details>
+<details><summary>ربط الخادم Firebase (اختياري — للمزامنة المباشرة بين المدير والممثلين)</summary>
+<p class="note">تجد القيم في Firebase Console ← Project settings ← تطبيقك. يمكن تركها فارغة وإضافتها لاحقاً من لوحة المدير.</p>
+<label>الصق الإعداد كاملاً (الأسهل)</label>
+<textarea id="setFbPaste" rows="4" dir="ltr" style="width:100%;padding:10px;border:1px solid #b9c8d5;border-radius:8px;font-size:14px" oninput="fillFbFromText('set')"></textarea>
+<label>apiKey</label><input id="setFbKey" dir="ltr" autocomplete="off"><label>appId</label><input id="setFbApp" dir="ltr" autocomplete="off"><label>projectId</label><input id="setFbProj" dir="ltr" value="election26-8eea6" autocomplete="off">
+</details>
+<label>رقم واتساب المدير (اختياري — تُرسل إليه نتائج الممثلين)</label><input type="tel" inputmode="tel" id="setPhone" placeholder="مثال: 0550123456">
+<div class="row"><div><label>الرمز السري للمدير</label><input type="password" id="setPin" autocomplete="new-password"></div>
+<div><label>تأكيد الرمز السري</label><input type="password" id="setPin2" autocomplete="new-password"></div></div>
+<label style="display:flex;gap:8px;align-items:center;font-weight:normal"><input type="checkbox" id="setAuto" checked style="width:auto"> توزيع المكاتب تلقائياً على الممثلين بالتساوي</label>
+<p class="note">يمكن لاحقاً تعديل أسماء المراكز والقوائم والمترشحين، وعدد المكاتب في كل مركز، وإضافة ممثلين، وتحديد عدد المسجلين في كل مكتب.</p>
+<div id="setupErr" style="color:#a83232;font-weight:bold;min-height:18px"></div>
+<button class="action" onclick="runSetup()">إنشاء التطبيق</button>
+</section>
+
+<section id="login" class="panel hidden"><h2>تسجيل الدخول</h2>
+<label>المستخدم</label><select id="loginUser"></select>
+<label>الرمز السري</label><input type="password" inputmode="numeric" id="loginPin" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+<div id="loginErr" style="color:#a83232;font-weight:bold;margin-top:8px;min-height:18px"></div>
+<button class="action" onclick="doLogin()">دخول</button></section>
+
+<div id="sessionBar" class="panel hidden" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px">
+<span>المستخدم: <b id="who"></b></span><button class="secondary" style="padding:8px 14px;border:0;border-radius:8px;font-weight:bold" onclick="logout()">خروج</button></div>
+
+<!-- ===== واجهة الممثل ===== -->
+<section id="rep" class="hidden">
+<div class="panel hidden" id="repEmpty"><p class="note" style="font-size:14px;margin:0">لم يوزّع المدير أي مكتب عليك بعد. تواصل معه ثم أعد فتح الصفحة.</p></div>
+<div class="panel" id="repPanel">
+<h2>تسجيل نتائج مكتب التصويت</h2>
+<div class="row">
+<div><label>المركز الانتخابي</label><select id="centre" onchange="fillOffices()"></select></div>
+<div><label>مكتب التصويت</label><select id="office" onchange="loadCurrent()"></select></div>
+</div>
+<p class="note">يسجل الممثل مجموع أصوات كل قائمة في الخانة المستقلة، ثم يضغط (+) مرة واحدة عن كل صوت للمترشح. يمكن استعمال (−) لتصحيح الضغط بالخطأ.</p>
+<div class="party"><h3>بيانات المكتب</h3>
+<div class="row"><div><label>عدد المسجلين (يحدده المدير)</label><input type="number" id="registered" readonly placeholder="لم يحدده المدير" style="background:#eef1f4"></div>
+<div><label>الأصوات المعبر عنها</label><input type="number" min="0" step="1" id="expressed" oninput="updateOfficeCheck()"></div></div>
+<label>الأصوات الملغاة</label><input type="number" min="0" step="1" id="cancelled" oninput="updateOfficeCheck()">
+<div id="officeWarn" class="totalbox" style="font-weight:bold;min-height:20px"></div></div>
+<div id="partyArea"></div>
+<button class="action" onclick="saveResult()">حفظ وإرسال نتائج هذا المكتب</button>
+<div id="saveStatus" class="status"></div>
+<div class="party"><h3>إرسال النتائج إلى المدير عبر واتساب</h3>
+<label>رقم واتساب المدير</label><input type="tel" inputmode="tel" id="waPhone" placeholder="مثال: 0550123456" oninput="saveWaPhone()">
+<div class="row"><button class="action" style="background:#128c7e" onclick="sendWhatsApp()">إرسال عبر واتساب</button><button class="action secondary" onclick="copyResultMsg()">نسخ الرسالة</button></div>
+<p class="note">احفظ نتائج المكتب أولاً، ثم أرسلها: تُرسل آخر نسخة محفوظة برسالة مقروءة تتضمن رمزاً يستورده المدير في تطبيقه. إن تركت الرقم فارغاً يفتح واتساب لتختار الشخص بنفسك. الرقم يُحفظ على هاتفك فقط.</p></div>
+</div>
+<div class="panel" id="repState">
+<h3>حالة هذا المكتب</h3><div id="officeState" class="note">لم يتم حفظ نتائج لهذا المكتب بعد.</div>
+</div>
+</section>
+
+<!-- ===== لوحة المدير ===== -->
+<section id="mgr" class="hidden">
+<div class="panel">
+<h2>لوحة قيادة المدير العام</h2>
+<div class="stats" id="stats"></div>
+<h3 style="margin-top:18px">ملخص أصوات المترشحين</h3>
+<div id="candidateSummary"></div>
+</div>
+<div class="panel">
+<h3>متابعة الممثلين</h3>
+<div id="repProgress"></div>
+</div>
+<div class="panel">
+<h3>الاتصال بالخادم (Firebase)</h3>
+<div id="fbStatus" class="totalbox" style="font-weight:bold"></div>
+<p class="note">أدخل القيم من Firebase Console ← Project settings ← تطبيق الويب (Your apps)، ثم اضغط «حفظ وتفعيل». بعدها يظهر «رابط الممثلين» الذي يحمل الإعداد: يفتحه كل ممثل مرة واحدة فيُحفظ الاتصال على هاتفه.</p>
+<label>الصق الإعداد كاملاً (الأسهل)</label>
+<textarea id="fbPaste" rows="4" dir="ltr" style="width:100%;padding:10px;border:1px solid #b9c8d5;border-radius:8px;font-size:14px" placeholder='const firebaseConfig = { apiKey: "...", appId: "..." }' oninput="fillFbFromText('')"></textarea>
+<label>apiKey</label><input id="fbKey" dir="ltr" autocomplete="off">
+<label>appId</label><input id="fbApp" dir="ltr" autocomplete="off">
+<label>projectId</label><input id="fbProj" dir="ltr" autocomplete="off">
+<div class="row"><button class="action" style="margin:8px 0 0" onclick="saveFb()">حفظ وتفعيل</button><button class="action secondary" style="margin:8px 0 0" onclick="clearFb()">إيقاف الاتصال</button></div>
+<div id="fbLinkBox" class="hidden">
+<button class="action secondary" onclick="window.open(baseUrl()+'?new=1','_blank')">فتح مولّد النسخ (لمترشح جديد)</button>
+<div class="totalbox" style="line-height:1.9"><b>الأفضل لكثرة الممثلين:</b> نزّل نسخة التطبيق المضبوطة (فيها الاتصال جاهز) وارفعها على GitHub بنفس اسم الملف الحالي، فيعمل <b>الرابط العادي</b> لكل الممثلين دون رابط خاص.</div>
+<button class="action" onclick="downloadConfigured()">تنزيل نسخة التطبيق المضبوطة</button>
+<label>رابط الممثلين</label><input id="fbLink" readonly dir="ltr" onclick="this.select()">
+<div class="row"><button class="action secondary" onclick="copyFbLink()">نسخ الرابط</button><button class="action" style="background:#128c7e" onclick="shareFbLink()">إرسال عبر واتساب</button></div>
+</div>
+</div>
+<div class="panel">
+<h3>بيانات البلدية</h3>
+<label>اسم البلدية</label><input id="infoName" onchange="saveInfo()">
+<div class="row"><div><label>نوع الاقتراع</label><input id="infoElection" onchange="saveInfo()"></div>
+<div><label>تاريخ الاقتراع</label><input id="infoDate" onchange="saveInfo()"></div></div>
+<label>رقم واتساب المدير (تُرسل إليه نتائج الممثلين)</label><input type="tel" inputmode="tel" id="infoPhone" onchange="saveInfo()" placeholder="مثال: 0550123456">
+</div>
+<div class="panel">
+<h3>استيراد من ملفات</h3>
+<p class="note">حمّل ملف CSV أو Excel (الصف الأول عناوين). يمكن استيراد المراكز والمكاتب، والقوائم والمترشحين. يُمنع الاستيراد بعد حفظ نتائج، إلا لتحديث أسماء المترشحين إذا بقيت أعدادهم كما هي.</p>
+<label>ملف المراكز والمكاتب (المركز | مكاتب الرجال | مكاتب النساء)</label><input type="file" id="fileCentres" accept=".csv,.txt,.xlsx,.xls" onchange="importFile('centres',this)">
+<label>ملف القوائم والمترشحين (القائمة | المترشح | * للمتابَع، اختياري)</label><input type="file" id="fileLists" accept=".csv,.txt,.xlsx,.xls" onchange="importFile('lists',this)">
+<div class="row"><button class="action secondary" onclick="downloadTemplate('centres')">نموذج ملف المراكز</button><button class="action secondary" onclick="downloadTemplate('lists')">نموذج ملف القوائم</button></div>
+<div id="importMsg" class="note" style="margin-top:8px"></div>
+</div>
+<div class="panel">
+<h3>القوائم والمترشحون</h3>
+<p class="note">عدّل اسم كل قائمة وكل مترشح (يُحفظ تلقائياً). يمكن إضافة قائمة أو مترشح أو حذف الأخير، لكن ذلك غير ممكن بعد حفظ أي نتائج.</p>
+<div id="namesEditor"></div>
+<div class="row"><button class="action secondary" onclick="addList()">+ إضافة قائمة</button><button class="action secondary" onclick="removeList()">حذف آخر قائمة</button></div>
+</div>
+<div class="panel">
+<h3>الحسابات</h3>
+<p class="note">لكل مستخدم رمز سري يسلّمه المدير له. يمكن تغيير الاسم والرمز في أي وقت.</p>
+<div id="usersEditor"></div>
+<button class="action secondary" onclick="addRep()">+ إضافة ممثل</button>
+</div>
+<div class="panel">
+<h3>توزيع المكاتب على الممثلين</h3>
+<p class="note">اختر الممثل المسؤول عن كل مكتب، وحدّد عدد المسجلين فيه. الممثل لا يرى إلا مكاتبه ولا يستطيع تعديل عدد المسجلين.</p>
+<div id="assignSummary" class="totalbox" style="font-weight:bold"></div>
+<button class="action secondary" style="margin:0 0 8px" onclick="autoAssign(true)">توزيع تلقائي بالتساوي</button>
+<div id="assignArea"></div>
+</div>
+<div class="panel">
+<h3>إدارة المراكز والمكاتب</h3>
+<p class="note">افتح كل مركز وحدّد عدد مكاتب الرجال ومكاتب النساء فيه (تختلف المراكز حسب موقعها). لا يمكن تقليل العدد إذا كانت لمكتب محذوف نتائج محفوظة.</p>
+<div id="officeTotals" class="totalbox" style="font-weight:bold"></div>
+<div id="manageOffices"></div>
+<label>إضافة مركز انتخابي</label>
+<div class="row"><input id="newCentreName" placeholder="اسم المركز الجديد"><button class="action" style="margin:0" onclick="addCentre()">إضافة المركز</button></div>
+</div>
+<div class="panel">
+<h3>استقبال النتائج من واتساب</h3>
+<p class="note">انسخ رسالة (أو عدة رسائل) أرسلها الممثلون من واتساب، ثم ارجع إلى التطبيق: سيسألك إن كنت تريد تحديث النتائج (نعم/لا) ويحدّثها تلقائياً عند الموافقة. وإن لم يظهر السؤال اضغط «فحص الرسائل المنسوخة» أو الصقها هنا كاملة. يتحقق التطبيق من المكتب والأعداد والقواعد ثم يسجل النتيجة. لا تُقبل رسائل تخص بلدية أو مترشحاً آخر.</p>
+<button class="action secondary" style="margin:0 0 8px" onclick="checkClipboard(true)">فحص الرسائل المنسوخة في الحافظة</button>
+<textarea id="waPaste" rows="6" style="width:100%;padding:10px;border:1px solid #b9c8d5;border-radius:8px;font-size:15px" placeholder="الصق الرسائل هنا"></textarea>
+<button class="action" onclick="importWa()">استيراد النتائج من الرسائل</button>
+<div id="waMsg" class="note" style="margin-top:8px"></div>
+</div>
+<div class="panel">
+<h3>النتائج حسب المكتب</h3>
+<div id="officeSummary" class="note">لا توجد نتائج محفوظة بعد.</div>
+<button class="action secondary" onclick="exportCSV()">تصدير النتائج إلى CSV</button>
+<button class="action secondary" onclick="clearAll()">مسح جميع النتائج</button>
+<button class="action danger" onclick="resetSetup()">إعادة إعداد البلدية من البداية</button>
+<p class="note" id="syncNote"></p>
+</div>
+</section>
+<div id="askBox" class="hidden" style="position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px">
+<div style="background:#fff;border-radius:14px;padding:18px;max-width:420px;width:100%">
+<h3 style="margin-top:0">📩 رسائل نتائج في الانتظار</h3>
+<div id="askText" style="line-height:1.9;font-size:15px"></div>
+<div class="row" style="margin-top:12px"><button class="action" id="askYes" style="margin:0">نعم، حدّث الآن</button><button class="action secondary" id="askNo" style="margin:0">لا، تجاهل</button></div>
+</div></div>
+<div id="toast" class="hidden" style="position:fixed;bottom:18px;left:12px;right:12px;background:#174a78;color:#fff;padding:12px;border-radius:10px;text-align:center;z-index:60;font-weight:bold"></div>
+<p class="note" style="text-align:center">رمز البلدية: <b id="bidFoot"></b></p>
+</main>
+
+<script>
+// === إعداد Firebase (اختياري هنا): يمكنك إدخال القيم من لوحة المدير بدل تعديل الكود. إن ملأتَ apiKey و appId هنا فهي تعمل لكل الأجهزة ===
+const FIREBASE_CONFIG={apiKey:"",authDomain:"election26-8eea6.firebaseapp.com",projectId:"election26-8eea6",appId:""};
+
+// كلمة سر إنشاء النسخ (بصمة SHA-256): تُملأ تلقائياً من «مولّد النسخ» عند تنزيل النسخة المحمية. فارغة = غير مفعّلة
+const CREATE_PASS_HASH="";
+
+/* رمز البلدية: يؤخذ من الرابط (?b=hamala) ليفصل بيانات كل بلدية عن غيرها */
+const _BI=(()=>{const cl=x=>String(x||"").toLowerCase().replace(/[^a-z0-9_-]/g,"");
+ const q=new URLSearchParams(location.search);let b=cl(q.get("b"));
+ try{if(b)localStorage.setItem("el_lastbid",b);else b=cl(localStorage.getItem("el_lastbid"))}catch(e){}
+ return{b:b||"default",none:q.has("new")||!b}})();
+const BID=_BI.b,NO_CODE=_BI.none;
+const K=k=>"el_"+BID+"_"+k;
+/* صفحة الإعداد مخفية عن الجميع: لا تظهر إلا برابط المدير (&setup=1) أو بعد فتحها من المولّد أو بعد «إعادة الإعداد» */
+const SETUP_FLAG=new URLSearchParams(location.search).has("setup");
+function setupAllowed(){let s=false;try{s=sessionStorage.getItem("el_setup_ok")==="1"||sessionStorage.getItem("el_cp_ok")==="1"}catch(e){}return SETUP_FLAG||s}
+function allowSetup(){try{sessionStorage.setItem("el_setup_ok","1")}catch(e){}}
+const fbClean=v=>String(v==null?"":v).replace(/["'\u201C\u201D\s,;]/g,"");
+const fbValid={k:v=>/^AIza[0-9A-Za-z_-]{30,}$/.test(v),a:v=>/^\d+:\d+:(web|android|ios):[0-9a-f]+$/i.test(v),p:v=>/^[a-z0-9-]+$/i.test(v)};
+let FB_BAD=false;
+function parseFbText(t){let g=n=>{let m=new RegExp(n+"\\s*[:=]\\s*[\"']([^\"']+)[\"']","i").exec(t||"");return m?fbClean(m[1]):""};return{k:g("apiKey"),a:g("appId"),p:g("projectId")}}
+function loadFb(){
+ let c=Object.assign({},FIREBASE_CONFIG);
+ if(c.apiKey&&c.appId)return c;
+ try{let q=new URLSearchParams(location.search).get("fb");
+  if(q){let j=JSON.parse(atob(q.replace(/-/g,"+").replace(/_/g,"/")));
+   if(j&&j.k&&j.a){localStorage.setItem("el_fb",JSON.stringify({k:j.k,a:j.a,p:j.p||c.projectId}));}}}catch(e){}
+ try{let st=JSON.parse(localStorage.getItem("el_fb")||"null");
+  if(st&&st.k&&st.a){let k=fbClean(st.k),a=fbClean(st.a),pj=fbClean(st.p||c.projectId);
+   if(fbValid.k(k)&&fbValid.a(a)&&fbValid.p(pj)){c.apiKey=k;c.appId=a;c.projectId=pj;c.authDomain=pj+".firebaseapp.com"}else FB_BAD=true}}catch(e){}
+ return c}
+const FB=loadFb();
+const CLOUD_ON=!!(FB.apiKey&&FB.appId&&window.firebase);
+let db=null,cloudReady=!CLOUD_ON,cloudEmpty=false,cfgTimer=null;
+
+const DEFAULT_CC="213"; // مفتاح الدولة الافتراضي للأرقام المحلية (الجزائر)
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function ld(key,def){try{let v=JSON.parse(localStorage.getItem(key));return v==null?def:v}catch(e){return def}}
+function emptyCfg(){return{setupDone:false,name:"",election:"الانتخابات المحلية",date:"",lists:[],follow:{},managerPhone:"",centres:[],users:[{id:"mgr",name:"المدير",pin:"1111"}],assign:{},reg:{}}}
+
+let cfg=Object.assign(emptyCfg(),ld(K("cfg"),{}));
+let records=ld(K("rec"),{});
+let session=localStorage.getItem(K("session"))||"";
+let current=[];
+const userById=id=>cfg.users.find(u=>u.id===id);
+const hasResults=()=>Object.keys(records).length>0;
+function persistCfg(){localStorage.setItem(K("cfg"),JSON.stringify(cfg));pushConfig()}
+function persistRecords(){localStorage.setItem(K("rec"),JSON.stringify(records))}
+
+function allOffices(){let a=[];cfg.centres.forEach(c=>{let n=0;
+ for(let k=1;k<=c.men;k++){n++;a.push({centre:c.name,cid:c.id,office:"مكتب "+n,id:c.id+"-m"+k,gender:"رجال"})}
+ for(let k=1;k<=c.women;k++){n++;a.push({centre:c.name,cid:c.id,office:"مكتب "+n,id:c.id+"-w"+k,gender:"نساء"})}});return a}
+function visibleOffices(){return session==="mgr"?allOffices():allOffices().filter(o=>cfg.assign[o.id]===session)}
+function structSig(){return JSON.stringify([cfg.lists.map(l=>l.cands.length),visibleOffices().map(o=>o.id)])}
+
+/* ---------- الواجهة العامة والدخول ---------- */
+function applyHeader(){
+ let t=cfg.setupDone&&cfg.name?"متابعة نتائج "+cfg.name:"متابعة نتائج الانتخابات";
+ $("hTitle").textContent=NO_CODE?"إنشاء نسخة جديدة":t;
+ $("hSub").textContent=NO_CODE?"لكل مترشح رابط خاص ونتائج مستقلة":cfg.setupDone?(cfg.election+(cfg.date?" — "+cfg.date:"")):"نسخة نموذجية لكل البلديات";
+ document.title=t;
+ $("bidFoot").textContent=BID;
+}
+function fillLoginUsers(){let sel=$("loginUser"),old=sel.value;sel.innerHTML="";cfg.users.forEach(u=>{let o=document.createElement("option");o.value=u.id;o.textContent=u.name;sel.appendChild(o)});if(old)sel.value=old}
+function applyPanels(){
+ if(NO_CODE){["loading","setup","notReady","login","sessionBar","rep","mgr","noCloud"].forEach(k=>$(k).classList.add("hidden"));$("gen").classList.remove("hidden");renderGen();applyHeader();return null}
+ $("gen").classList.add("hidden");
+ let u=cfg.setupDone?userById(session):null;
+ $("loading").classList.toggle("hidden",!(!cloudReady&&!cfg.setupDone));
+ $("setup").classList.toggle("hidden",!(cloudReady&&!cfg.setupDone&&setupAllowed()));
+ $("notReady").classList.toggle("hidden",!(cloudReady&&!cfg.setupDone&&!setupAllowed()));
+ $("login").classList.toggle("hidden",!(cfg.setupDone&&!u));
+ $("sessionBar").classList.toggle("hidden",!u);
+ if(u)$("who").textContent=u.name;
+ $("noCloud").classList.toggle("hidden",!(cfg.setupDone&&!CLOUD_ON&&(!u||u.id!=="mgr")));
+ $("setupRepWarn").classList.toggle("hidden",CLOUD_ON);
+ $("setupPassBox").classList.toggle("hidden",!(CREATE_PASS_HASH&&!cpOk()));
+ $("bidShow").textContent=BID==="default"?"default (لم يُحدَّد — أضف ‎?b=اسم_البلدية‎ إلى الرابط لفصل بيانات كل بلدية)":BID;
+ applyHeader();return u}
+function applySession(){let u=applyPanels();if(!u){show("");fillLoginUsers();return}
+ if(u.id==="mgr"&&cloudEmpty)pushConfig();show(u.id==="mgr"?"mgr":"rep")}
+function doLogin(){
+ if(!cloudReady){$("loginErr").textContent="جارٍ تحميل البيانات من الخادم… أعد المحاولة بعد لحظات.";return}
+ let u=userById($("loginUser").value),pin=$("loginPin").value.trim();
+ if(!u||u.pin!==pin){$("loginErr").textContent="الرمز السري غير صحيح.";return}
+ session=u.id;localStorage.setItem(K("session"),session);$("loginPin").value="";$("loginErr").textContent="";applySession();topNow()}
+function logout(){session="";localStorage.removeItem(K("session"));applySession();topNow()}
+function show(which){
+ $("rep").classList.toggle("hidden",which!=="rep");$("mgr").classList.toggle("hidden",which!=="mgr");
+ if(which==="mgr")renderAll();
+ else if(which==="rep"){renderParties();refreshCentres();updateOfficeState();$("waPhone").value=localStorage.getItem(K("wa"))||cfg.managerPhone||""}}
+function renderAll(){renderManager();renderFb();renderInfo();renderNames();renderUsers();renderAssign();renderOfficeManager();
+ $("syncNote").textContent=db?"البيانات متزامنة مع الخادم: يرى الممثلون مكاتبهم ويصل ما يسجلونه إلى هذه اللوحة مباشرة.":"وضع محلي: البيانات محفوظة على هذا الجهاز فقط (لم يُضبط Firebase)."}
+
+/* ---------- الإعداد الأولي ---------- */
+function distributeCentres(C,M,W){
+ let a=Array.from({length:C},(_,i)=>({id:"c"+(i+1),name:"المركز "+(i+1),men:0,women:0})),ptr=0;
+ for(let k=0;k<M;k++){a[ptr%C].men++;ptr++}
+ for(let k=0;k<W;k++){a[ptr%C].women++;ptr++}
+ return a}
+function intIn(id,min,max,label){let v=$(id).value.trim();let n=Number(v);if(v===""||!Number.isInteger(n)||n<min||n>max){throw new Error(label+": أدخل عدداً صحيحاً بين "+min+" و"+max+".")}return n}
+function randPin(used){let p;do{p=String(1000+Math.floor(Math.random()*9000))}while(used.has(p));used.add(p);return p}
+function runSetup(){
+ try{
+  if(CREATE_PASS_HASH&&!cpOk()){if(!passOk($("setPass").value))throw new Error("كلمة سر الإنشاء غير صحيحة.");setCpOk()}
+  let name=$("setName").value.trim();if(!name)throw new Error("اكتب اسم البلدية.");
+  let R=intIn("setReps",0,300,"عدد الممثلين"),C=0,M=0,W=0,L=0,N=0;
+  if(!pendingCentres){C=intIn("setCentres",1,300,"عدد المراكز");M=intIn("setMen",0,3000,"إجمالي مكاتب الرجال");W=intIn("setWomen",0,3000,"إجمالي مكاتب النساء");if(M+W<C)throw new Error("إجمالي المكاتب ("+(M+W)+") أقل من عدد المراكز ("+C+"): لكل مركز مكتب واحد على الأقل.");if(Math.ceil(M/C)>40||Math.ceil(W/C)>40)throw new Error("عدد المكاتب في المركز الواحد يتجاوز 40: زد عدد المراكز أو قلّل المكاتب.")}
+  if(!pendingLists){L=intIn("setLists",1,80,"عدد القوائم");N=intIn("setCands",1,80,"عدد المترشحين")}
+  let pin=$("setPin").value.trim();if(pin.length<4)throw new Error("الرمز السري للمدير 4 خانات على الأقل.");
+  if(pin!==$("setPin2").value.trim())throw new Error("تأكيد الرمز السري غير مطابق.");
+  let used=new Set([pin]);
+  let c=emptyCfg();c.setupDone=true;c.name=name;c.election=$("setElection").value.trim()||"الانتخابات المحلية";c.date=$("setDate").value.trim();c.managerPhone=$("setPhone").value.trim();
+  c.lists=pendingLists?pendingLists.map(l=>({name:l.name,cands:l.cands.slice()})):Array.from({length:L},(_,i)=>({name:"القائمة "+(i+1),cands:Array.from({length:N},(_,j)=>"مترشح "+(j+1))}));
+  c.centres=pendingCentres?pendingCentres.map((x,i)=>({id:"c"+(i+1),name:x.name,men:x.men,women:x.women})):distributeCentres(C,M,W);
+  c.users=[{id:"mgr",name:"المدير",pin}];
+  for(let r=1;r<=R;r++)c.users.push({id:"rep"+r,name:"ممثل "+r,pin:randPin(used)});
+  records={};persistRecords();if(db)cloudClear();
+  if(pendingLists)pendingLists.forEach((l,p)=>l.stars.forEach(i=>{c.follow[p+"-"+i]=1}));
+  cfg=c;
+  if($("setAuto").checked)autoAssign(false);
+  session="mgr";localStorage.setItem(K("session"),session);
+  persistCfg();$("setupErr").textContent="";pendingCentres=null;pendingLists=null;["stCentresSetup","stListsSetup"].forEach(k=>$(k).textContent="");
+  try{let u=new URL(location.href);u.searchParams.delete("setup");history.replaceState(null,"",u.pathname+u.search+u.hash)}catch(e){}
+  applySession();window.scrollTo(0,0);
+  alert("تم إنشاء التطبيق ("+cfg.centres.length+" مركزاً، "+allOffices().length+" مكتباً). أسماء الممثلين ورموزهم السرية في لوحة «الحسابات»، وتستطيع الآن تسمية المراكز والقوائم والمترشحين وتحديد عدد المسجلين.");
+  {let k=fbClean($("setFbKey").value),a=fbClean($("setFbApp").value),pj=fbClean($("setFbProj").value);
+   if(fbValid.k(k)&&fbValid.a(a)&&fbValid.p(pj)){localStorage.setItem("el_fb",JSON.stringify({k:k,a:a,p:pj}));if(typeof location.reload==="function")location.reload()}}
+ }catch(e){$("setupErr").textContent=e.message}
+}
+function resetSetup(){
+ if(!confirm("سيتم حذف إعدادات البلدية بالكامل (المراكز والقوائم والحسابات والتوزيع). هل تريد المتابعة؟"))return;
+ if(hasResults()&&!confirm("توجد نتائج محفوظة وسيتم حذفها نهائياً. هل أنت متأكد؟"))return;
+ records={};persistRecords();if(db)cloudClear();
+ cfg=emptyCfg();session="";localStorage.removeItem(K("session"));allowSetup();persistCfg();applySession()}
+
+/* ---------- واجهة الممثل ---------- */
+function refreshCentres(){
+ let c=$("centre"),old=c.value;c.innerHTML="";let seen={};
+ visibleOffices().forEach(o=>{if(seen[o.cid])return;seen[o.cid]=1;let op=document.createElement("option");op.value=o.cid;op.textContent=o.centre;c.appendChild(op)});
+ if(seen[old])c.value=old;fillOffices()}
+function fillOffices(){
+ let cid=$("centre").value,s=$("office"),old=s.value;s.innerHTML="";
+ let vis=visibleOffices().filter(o=>o.cid===cid);
+ vis.forEach(o=>{let op=document.createElement("option");op.value=o.id;op.textContent=o.office+" — "+o.gender;s.appendChild(op)});
+ if(vis.some(o=>o.id===old))s.value=old;
+ let has=visibleOffices().length>0;
+ ["repPanel","repState"].forEach(k=>$(k).classList.toggle("hidden",!has));
+ $("repEmpty").classList.toggle("hidden",has||session==="mgr");
+ loadCurrent()}
+function renderParties(){
+ let root=$("partyArea");root.innerHTML="";
+ cfg.lists.forEach((l,pi)=>{
+  let box=document.createElement("div");box.className="party";
+  box.innerHTML=`<div class="party-head"><strong>القائمة رقم ${pi+1}: <em id="ln${pi}" style="font-style:normal">${esc(l.name)}</em></strong><span>${l.cands.length} مترشحاً</span></div><label>مجموع أصوات القائمة رقم ${pi+1}</label><input type="number" min="0" step="1" id="listTotal${pi}" placeholder="أدخل مجموع أصوات القائمة"> <div class="totalbox">مجموع أصوات المترشحين: <b id="candidateTotal${pi}">0</b><div id="warning${pi}" style="font-weight:bold;color:#a83232;margin-top:6px"></div></div><div class="candidates" id="grid${pi}"></div>`;
+  root.appendChild(box);
+  let grid=box.querySelector("#grid"+pi);
+  l.cands.forEach((n,i)=>{let el=document.createElement("div");el.className="candidate";
+   el.innerHTML=`<small id="cn${pi}_${i}">${i+1}. ${esc(n)}</small><div class="count" id="count${pi}_${i}">0</div><div class="controls"><button class="minus" onclick="changeVote(${pi},${i},-1)">−</button><button class="plus" onclick="changeVote(${pi},${i},1)">+</button></div>`;
+   grid.appendChild(el)});
+  box.querySelector("#listTotal"+pi).oninput=updateTotals;
+ })}
+function refreshNames(){cfg.lists.forEach((l,pi)=>{let e=$("ln"+pi);if(e)e.textContent=l.name;l.cands.forEach((n,i)=>{let c=$(`cn${pi}_${i}`);if(c)c.textContent=(i+1)+". "+n})})}
+function changeVote(p,i,d){
+ if(d>0){let f=$("listTotal"+p).value,sum=current[p].reduce((a,b)=>a+b,0);
+  if(f!==""&&sum+1>Number(f)){$("warning"+p).textContent="لا يمكن الزيادة: أصوات المترشحين بلغت مجموع أصوات القائمة ("+f+").";if(navigator.vibrate)navigator.vibrate(120);return}}
+ current[p][i]=Math.max(0,current[p][i]+d);$(`count${p}_${i}`).textContent=current[p][i];updateTotals()}
+function updateTotals(){
+ updateOfficeCheck();
+ current.forEach((arr,p)=>{let sum=arr.reduce((a,b)=>a+b,0);$("candidateTotal"+p).textContent=sum;
+  let field=$("listTotal"+p),limit=Number(field.value||0),bad=field.value!==""&&sum>limit;
+  field.classList.toggle("err",bad);
+  $("warning"+p).textContent=bad?"تنبيه: أصوات المترشحين تتجاوز مجموع أصوات القائمة بـ "+(sum-limit)+" صوتاً.":""})}
+function updateOfficeCheck(){
+ let reg=$("registered").value,ex=$("expressed").value,ca=$("cancelled").value,box=$("officeWarn");
+ ["registered","expressed","cancelled"].forEach(k=>$(k).classList.remove("err"));
+ box.textContent="";box.style.color="#a83232";let msgs=[],ok=[];
+ if(reg!==""&&(ex!==""||ca!=="")){let tot=Number(ex||0)+Number(ca||0);
+  if(tot>Number(reg)){["registered","expressed","cancelled"].forEach(k=>$(k).classList.add("err"));msgs.push("المعبر عنها + الملغاة ("+tot+") تتجاوز عدد المسجلين ("+reg+") بـ "+(tot-Number(reg)))}
+  else ok.push("المعبر عنها + الملغاة = "+tot+" ≤ المسجلين "+reg)}
+ let tv=cfg.lists.map((_,p)=>$("listTotal"+p)).filter(x=>x&&x.value!=="");
+ if(ex!==""&&tv.length){let ls=tv.reduce((a,x)=>a+Number(x.value),0);
+  if(ls>Number(ex)){$("expressed").classList.add("err");msgs.push("مجموع أصوات القوائم ("+ls+") يتجاوز الأصوات المعبر عنها ("+ex+") بـ "+(ls-Number(ex)))}
+  else ok.push("مجموع القوائم = "+ls+" ≤ المعبر عنها "+ex)}
+ if(msgs.length)box.textContent="تنبيه: "+msgs.join(" — ");
+ else if(ok.length){box.style.color="#17613d";box.textContent="✓ "+ok.join(" — ")}}
+function loadCurrent(){
+ let id=$("office").value;if(!id)return;let r=records[id];
+ current=cfg.lists.map((l,p)=>l.cands.map((_,i)=>(r&&r.votes&&r.votes[p]&&r.votes[p][i])||0));
+ current.forEach((arr,p)=>arr.forEach((v,i)=>$(`count${p}_${i}`).textContent=v));
+ cfg.lists.forEach((l,p)=>{$("listTotal"+p).value=r&&r.listTotals&&r.listTotals[p]!==undefined?r.listTotals[p]:""});
+ ["expressed","cancelled"].forEach(k=>$(k).value=r&&r[k]!==undefined?r[k]:"");
+ $("registered").value=cfg.reg[id]!==undefined?cfg.reg[id]:"";
+ updateTotals();updateOfficeState();$("saveStatus").style.display="none"}
+function saveResult(){
+ let id=$("office").value,su=userById(session);
+ if(!su||su.id==="mgr"||cfg.assign[id]!==session){alert("هذا المكتب غير موزّع عليك.");return}
+ if(cfg.reg[id]===undefined){alert("لم يحدد المدير عدد المسجلين لهذا المكتب بعد، لا يمكن الحفظ.");return}
+ let ex=$("expressed").value,ca=$("cancelled").value;
+ if([ex,ca].some(x=>x===""||Number(x)<0||!Number.isInteger(Number(x)))){alert("يرجى إدخال الأصوات المعبر عنها والملغاة بأعداد صحيحة (ويمكن إدخال صفر).");return}
+ let reg=Number(cfg.reg[id]);ex=Number(ex);ca=Number(ca);
+ if(ex+ca>reg){alert("لا يمكن حفظ النتائج: الأصوات المعبر عنها ("+ex+") + الملغاة ("+ca+") = "+(ex+ca)+" تتجاوز عدد المسجلين ("+reg+").");return}
+ let totals=cfg.lists.map((_,p)=>$("listTotal"+p).value);
+ if(totals.some(x=>x===""||Number(x)<0||!Number.isInteger(Number(x)))){alert("يرجى إدخال مجموع أصوات كل قائمة بأعداد صحيحة، ويمكن إدخال صفر.");return}
+ totals=totals.map(Number);let ls=totals.reduce((a,b)=>a+b,0);
+ if(ls>ex){alert("لا يمكن حفظ النتائج: مجموع أصوات القوائم ("+ls+") يتجاوز الأصوات المعبر عنها ("+ex+").");return}
+ for(let p=0;p<totals.length;p++){let d=current[p].reduce((a,b)=>a+b,0);
+  if(d>totals[p]){alert("لا يمكن حفظ النتائج: مجموع أصوات مترشحي القائمة رقم "+(p+1)+" ("+d+") يتجاوز مجموع أصوات القائمة ("+totals[p]+").");return}}
+ records[id]={centre:$("centre").selectedOptions[0].textContent,office:$("office").selectedOptions[0].textContent,by:session,listTotals:totals,registered:reg,expressed:ex,cancelled:ca,votes:current.map(a=>a.slice()),updated:new Date().toLocaleString("ar-DZ"),ts:Date.now()};
+ persistRecords();cloudSaveRecord(id);
+ let st=$("saveStatus");st.textContent="تم حفظ نتائج "+records[id].centre+" — "+records[id].office+" على هذا الجهاز."+(db?" وسيُرسل إلى المدير تلقائياً عند توفر الاتصال.":"");st.style.display="block";updateOfficeState()}
+function updateOfficeState(){let id=$("office").value,r=records[id];$("officeState").textContent=r?`هذا المكتب لديه نتائج محفوظة. آخر تعديل: ${r.updated}`:"لم يتم حفظ نتائج لهذا المكتب بعد."}
+
+/* ---------- لوحة المدير ---------- */
+function renderManager(){
+ let offices=allOffices(),L=cfg.lists.length,saved=0,T={reg:0,exp:0,can:0};
+ let l=Array(L).fill(0),votes=cfg.lists.map(x=>Array(x.cands.length).fill(0));
+ offices.forEach(o=>{let r=records[o.id];if(!r)return;saved++;T.reg+=r.registered||0;T.exp+=r.expressed||0;T.can+=r.cancelled||0;
+  cfg.lists.forEach((x,p)=>{l[p]+=(r.listTotals&&r.listTotals[p])||0;x.cands.forEach((_,i)=>{votes[p][i]+=(r.votes&&r.votes[p]&&r.votes[p][i])||0})})});
+ let sumL=l.reduce((a,b)=>a+b,0),fl=followedList();
+ let h=cfg.lists.map((x,p)=>`<div class="stat">${esc(x.name)}<b>${l[p]}</b><small>${sumL?(l[p]/sumL*100).toFixed(1)+"%":"—"}</small></div>`).join("");
+ h+=`<div class="stat">المكاتب المسجلة<b>${saved} / ${offices.length}</b></div><div class="stat">المكاتب المتبقية<b>${offices.length-saved}</b></div><div class="stat">مجموع المسجلين<b>${T.reg}</b></div><div class="stat">مجموع المعبر عنها<b>${T.exp}</b></div><div class="stat">مجموع الملغاة<b>${T.can}</b></div><div class="stat">نسبة المشاركة<b>${T.reg?((T.exp+T.can)/T.reg*100).toFixed(1)+"%":"—"}</b></div>`;
+ $("stats").innerHTML=h;
+ {let reps=cfg.users.filter(u=>u.id!=="mgr"),rp="",done=0,idle=0,unassigned=offices.filter(o=>!cfg.assign[o.id]);
+  reps.forEach(u=>{let mine=offices.filter(o=>cfg.assign[o.id]===u.id),sv=mine.filter(o=>records[o.id]),rem=mine.filter(o=>!records[o.id]);
+   let ts=Math.max(0,...sv.map(o=>records[o.id].ts||0));
+   let st=!mine.length?"بلا مكاتب":(!rem.length?"✓ أنهى":(!sv.length?"لم يبدأ":"جارٍ"));
+   if(mine.length&&!rem.length)done++;if(mine.length&&!sv.length)idle++;
+   let pct=mine.length?Math.round(sv.length/mine.length*100):0,color=!mine.length?"#8a96a1":(!rem.length?"#16784a":(!sv.length?"#a83232":"#c58a00"));
+   rp+="<details><summary>"+esc(u.name)+" — "+sv.length+" / "+mine.length+" <span style='color:"+color+"'>("+st+")</span>"+(ts?" — آخر تحديث "+new Date(ts).toLocaleTimeString("ar-DZ",{hour:"2-digit",minute:"2-digit"}):"")+"</summary><div style='background:#e9eef3;border-radius:6px;height:8px;margin:8px 0'><div style='width:"+pct+"%;background:"+color+";height:8px;border-radius:6px'></div></div>"+(rem.length?"<div class='note'>المكاتب المتبقية: "+rem.map(o=>esc(o.centre+" — "+o.office)).join("، ")+"</div>":"<div class='note'>لا توجد مكاتب متبقية.</div>")+"</details>"});
+  $("repProgress").innerHTML=reps.length?"<div class='totalbox' style='font-weight:bold'>"+reps.length+" ممثل — أنهى: "+done+" | لم يبدأ: "+idle+(unassigned.length?" | مكاتب غير موزعة: "+unassigned.length:"")+"</div>"+rp:"<p class='note'>لا يوجد ممثلون بعد.</p>"}
+ let out="";
+ if(fl.length){out+=`<div class="wrap"><table><thead><tr><th>★ المترشح المتابَع</th><th>القائمة</th><th>الأصوات</th><th>الترتيب في قائمته</th></tr></thead><tbody>`;
+  fl.forEach(f=>{let v=votes[f.p][f.i],rank=1+votes[f.p].filter(x=>x>v).length;out+=`<tr style="background:#fff7d6"><td>★ ${esc(f.name)}</td><td>${esc(f.list)}</td><td><b>${v}</b></td><td>${rank} من ${votes[f.p].length}</td></tr>`});out+="</tbody></table></div>"}
+ else out+=`<p class="note">لم تُحدَّد نجمة لأي مترشح بعد. يمكنك تحديد المترشح المتابَع بالضغط على ☆ بجانب اسمه في «القوائم والمترشحون».</p>`;
+ cfg.lists.forEach((x,p)=>{out+=`<details><summary>${esc(x.name)} — القائمة ${p+1}</summary><div class="wrap"><table><thead><tr><th>المترشح</th><th>مجموع الأصوات</th><th>★</th></tr></thead><tbody>`;
+  votes[p].forEach((v,i)=>{let f=cfg.follow&&cfg.follow[p+"-"+i];out+=`<tr${f?' style="background:#fff7d6"':""}><td>${i+1}. ${esc(x.cands[i])}</td><td>${v}</td><td>${f?"★":""}</td></tr>`});out+="</tbody></table></div></details>"});
+ $("candidateSummary").innerHTML=out;
+ let rows=offices.filter(o=>records[o.id]);
+ $("officeSummary").innerHTML=rows.length?`<div class="wrap"><table><thead><tr><th>المركز</th><th>المكتب</th>${cfg.lists.map((x,p)=>`<th title="${esc(x.name)}">ق${p+1}</th>`).join("")}${fl.map(f=>`<th>★ ${esc(f.name)}</th>`).join("")}<th>المسجلون</th><th>المعبر عنها</th><th>الملغاة</th><th>الممثل</th></tr></thead><tbody>${rows.map(o=>{let r=records[o.id];return `<tr><td>${esc(o.centre)}</td><td>${esc(o.office)}</td>${cfg.lists.map((x,p)=>`<td>${(r.listTotals&&r.listTotals[p])??"—"}</td>`).join("")}${fl.map(f=>`<td>${(r.votes&&r.votes[f.p]&&r.votes[f.p][f.i])||0}</td>`).join("")}<td>${r.registered??"—"}</td><td>${r.expressed??"—"}</td><td>${r.cancelled??"—"}</td><td>${esc((userById(r.by)||{}).name||"—")}</td></tr>`}).join("")}</tbody></table></div>`:"لا توجد نتائج محفوظة بعد."}
+function renderInfo(){$("infoName").value=cfg.name;$("infoElection").value=cfg.election;$("infoDate").value=cfg.date;$("infoPhone").value=cfg.managerPhone||""}
+function saveInfo(){cfg.name=$("infoName").value.trim()||cfg.name;cfg.election=$("infoElection").value.trim()||cfg.election;cfg.date=$("infoDate").value.trim();cfg.managerPhone=$("infoPhone").value.trim();persistCfg();applyHeader()}
+function exportCSV(){
+ let head=["المركز","المكتب"].concat(cfg.lists.map(l=>l.name),["المسجلون","المعبر عنها","الملغاة"],cfg.lists.map(l=>"مترشحو "+l.name),followedList().map(f=>"★ "+f.name));
+ let lines=[head];
+ allOffices().filter(o=>records[o.id]).forEach(o=>{let r=records[o.id];
+  lines.push([o.centre,o.office].concat(cfg.lists.map((_,p)=>(r.listTotals&&r.listTotals[p])??""),[r.registered??"",r.expressed??"",r.cancelled??""],cfg.lists.map((l,p)=>l.cands.map((_,i)=>(r.votes&&r.votes[p]&&r.votes[p][i])||0).join("|")),followedList().map(f=>(r.votes&&r.votes[f.p]&&r.votes[f.p][f.i])||0))) });
+ let csv=lines.map(a=>a.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(",")).join("\n");
+ let a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="نتائج_"+(cfg.name||"البلدية")+".csv";a.click();URL.revokeObjectURL(a.href)}
+function clearAll(){
+ if(!confirm(db?"سيتم حذف جميع النتائج المسجلة لدى الجميع (على الخادم). هل تريد المتابعة؟":"هل تريد مسح جميع النتائج من هذا الجهاز؟"))return;
+ records={};persistRecords();if(db)cloudClear();if(session!=="mgr")loadCurrent();renderManager()}
+
+/* -- القوائم والمترشحون -- */
+function renderNames(openIdx){
+ let root=$("namesEditor");root.innerHTML="";
+ cfg.lists.forEach((l,pi)=>{let d=document.createElement("details"),filled=false;
+  d.innerHTML=`<summary>القائمة رقم ${pi+1} — ${esc(l.name)} (${l.cands.length} مترشحاً)</summary>`;
+  d.ontoggle=()=>{if(!d.open||filled)return;filled=true;fillListEditor(d,pi)};
+  root.appendChild(d);if(pi===openIdx)d.open=true})}
+function fillListEditor(d,pi){
+ let l=cfg.lists[pi],w=document.createElement("div");w.innerHTML="<label>اسم القائمة</label>";
+ let li=document.createElement("input");li.value=l.name;li.oninput=()=>{l.name=li.value.trim()||("القائمة "+(pi+1));persistCfg()};w.appendChild(li);d.appendChild(w);
+ l.cands.forEach((n,i)=>{let x=document.createElement("div");x.innerHTML=`<label>مترشح ${i+1}</label>`;let rw=document.createElement("div");rw.style.cssText="display:flex;gap:8px";let inp=document.createElement("input");inp.value=n;inp.oninput=()=>{l.cands[i]=inp.value.trim()||("مترشح "+(i+1));persistCfg()};rw.appendChild(inp);
+  let st=document.createElement("button");st.title="مترشح متابَع";st.textContent=(cfg.follow&&cfg.follow[pi+"-"+i])?"★":"☆";st.style.cssText="width:52px;font-size:24px;border:1px solid #b9c8d5;border-radius:8px;background:#fff;color:#c58a00";st.onclick=()=>{toggleFollow(pi,i);st.textContent=cfg.follow[pi+"-"+i]?"★":"☆"};rw.appendChild(st);x.appendChild(rw);d.appendChild(x)});
+ let b=document.createElement("div");b.className="row";b.innerHTML=`<button class="action secondary" onclick="changeCands(${pi},1)">+ إضافة مترشح</button><button class="action secondary" onclick="changeCands(${pi},-1)">حذف آخر مترشح</button>`;d.appendChild(b)}
+function followedList(){let a=[];cfg.lists.forEach((l,p)=>l.cands.forEach((n,i)=>{if(cfg.follow&&cfg.follow[p+"-"+i])a.push({p,i,name:n,list:l.name})}));return a}
+function toggleFollow(p,i){cfg.follow=cfg.follow||{};let k=p+"-"+i;if(cfg.follow[k])delete cfg.follow[k];else cfg.follow[k]=1;persistCfg();renderManager()}
+function structLock(){if(hasResults()){alert("لا يمكن تغيير عدد القوائم أو المترشحين بعد حفظ نتائج. (يمكنك فقط تعديل الأسماء، أو مسح جميع النتائج أولاً.)");return true}return false}
+function changeCands(pi,d){if(structLock())return;let l=cfg.lists[pi];
+ if(d>0)l.cands.push("مترشح "+(l.cands.length+1));
+ else{if(l.cands.length<=1){alert("يجب أن تحتوي القائمة على مترشح واحد على الأقل.");return}l.cands.pop();delete cfg.follow[pi+"-"+l.cands.length]}
+ persistCfg();renderNames(pi);renderManager()}
+function addList(){if(structLock())return;let n=cfg.lists.length,k=n?cfg.lists[0].cands.length:10;
+ cfg.lists.push({name:"القائمة "+(n+1),cands:Array.from({length:k},(_,j)=>"مترشح "+(j+1))});persistCfg();renderNames(n);renderManager()}
+function removeList(){if(structLock())return;if(cfg.lists.length<=1){alert("يجب أن تبقى قائمة واحدة على الأقل.");return}
+ if(!confirm("حذف آخر قائمة ("+cfg.lists[cfg.lists.length-1].name+")؟"))return;let last=cfg.lists.length-1;Object.keys(cfg.follow||{}).forEach(k=>{if(k.startsWith(last+"-"))delete cfg.follow[k]});cfg.lists.pop();persistCfg();renderNames();renderManager()}
+
+/* -- الحسابات -- */
+function renderUsers(){
+ let root=$("usersEditor");root.innerHTML="";
+ cfg.users.forEach((u,i)=>{let w=document.createElement("div");w.className="row";w.style.marginTop="8px";
+  let a=document.createElement("div");a.innerHTML="<label>الاسم</label>";let n=document.createElement("input");n.value=u.name;
+  n.onchange=()=>{u.name=n.value.trim()||u.name;n.value=u.name;persistCfg();fillLoginUsers();renderAssign();if(session===u.id)$("who").textContent=u.name};a.appendChild(n);
+  let b=document.createElement("div");b.innerHTML="<label>الرمز السري</label>";let pn=document.createElement("input");pn.value=u.pin;
+  pn.onchange=()=>{if(pn.value.trim().length<4){alert("الرمز السري 4 خانات على الأقل.");pn.value=u.pin;return}u.pin=pn.value.trim();persistCfg()};b.appendChild(pn);
+  w.appendChild(a);w.appendChild(b);
+  if(u.id!=="mgr"){let x=document.createElement("button");x.textContent="حذف هذا الممثل";x.className="secondary";x.style.cssText="margin-top:6px;padding:8px 12px;border:0;border-radius:8px;font-weight:bold;color:#a83232";x.onclick=()=>delRep(i);w.appendChild(x)}
+  root.appendChild(w)})}
+function addRep(){
+ let n=1+Math.max(0,...cfg.users.map(u=>{let m=/^rep(\d+)$/.exec(u.id);return m?Number(m[1]):0}));
+ let u={id:"rep"+n,name:"ممثل "+n,pin:randPin(new Set(cfg.users.map(x=>x.pin)))};cfg.users.push(u);persistCfg();fillLoginUsers();renderUsers();renderAssign();
+ alert("أُضيف "+u.name+" — رمزه السري: "+u.pin+" (يمكنك تغييره من الحقل).")}
+function delRep(i){let u=cfg.users[i];if(!u||u.id==="mgr")return;
+ let n=Object.keys(cfg.assign).filter(k=>cfg.assign[k]===u.id).length;
+ if(!confirm("حذف "+u.name+"؟"+(n?" ستصبح مكاتبه ("+n+") غير موزعة.":"")))return;
+ Object.keys(cfg.assign).forEach(k=>{if(cfg.assign[k]===u.id)delete cfg.assign[k]});cfg.users.splice(i,1);persistCfg();fillLoginUsers();renderUsers();renderAssign()}
+
+/* -- التوزيع وعدد المسجلين -- */
+function autoAssign(ask){
+ let reps=cfg.users.filter(u=>u.id!=="mgr"),offs=allOffices();
+ if(!reps.length){if(ask)alert("لا يوجد ممثلون. أضف ممثلين أولاً.");return}
+ if(ask&&!confirm("سيُعاد توزيع جميع المكاتب على الممثلين بالتساوي (يُستبدل التوزيع الحالي). متابعة؟"))return;
+ let per=Math.ceil(offs.length/reps.length);cfg.assign={};
+ offs.forEach((o,i)=>{cfg.assign[o.id]=reps[Math.min(reps.length-1,Math.floor(i/per))].id});
+ if(ask){persistCfg();renderAssign()}}
+function updateAssignSummary(){
+ let reps=cfg.users.filter(u=>u.id!=="mgr"),cnt={},all=allOffices();
+ all.forEach(o=>{if(cfg.assign[o.id])cnt[cfg.assign[o.id]]=(cnt[cfg.assign[o.id]]||0)+1});
+ $("assignSummary").textContent=reps.map(u=>u.name+": "+(cnt[u.id]||0)).join(" | ")+(reps.length?" | ":"")+"غير موزع: "+all.filter(o=>!cfg.assign[o.id]).length+" | بدون عدد مسجلين: "+all.filter(o=>cfg.reg[o.id]===undefined).length}
+function renderAssign(){
+ let root=$("assignArea");root.innerHTML="";let reps=cfg.users.filter(u=>u.id!=="mgr");
+ cfg.centres.forEach(c=>{let d=document.createElement("details");d.innerHTML=`<summary>${esc(c.name)}</summary>`;
+  allOffices().filter(o=>o.cid===c.id).forEach(o=>{
+   let w=document.createElement("div");w.className="row";w.style.marginTop="8px";
+   let a=document.createElement("div");a.innerHTML=`<label>${esc(o.office)} — ${o.gender}</label>`;
+   let sel=document.createElement("select");sel.innerHTML='<option value="">غير موزع</option>'+reps.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join("");sel.value=cfg.assign[o.id]||"";
+   sel.onchange=()=>{if(sel.value)cfg.assign[o.id]=sel.value;else delete cfg.assign[o.id];persistCfg();updateAssignSummary()};a.appendChild(sel);
+   let b=document.createElement("div");b.innerHTML="<label>عدد المسجلين</label>";
+   let inp=document.createElement("input");inp.type="number";inp.min="0";inp.step="1";inp.value=cfg.reg[o.id]!==undefined?cfg.reg[o.id]:"";
+   inp.onchange=()=>{let v=inp.value;
+    if(v===""){delete cfg.reg[o.id]}
+    else if(Number(v)>=0&&Number.isInteger(Number(v))){cfg.reg[o.id]=Number(v);let r=records[o.id];
+     if(r){r.registered=Number(v);persistRecords();cloudSaveRecord(o.id);if((r.expressed||0)+(r.cancelled||0)>r.registered)alert("تنبيه: نتائج "+o.centre+" — "+o.office+" المحفوظة: المعبر عنها + الملغاة تتجاوز عدد المسجلين الجديد.")}}
+    else{alert("أدخل عدداً صحيحاً موجباً.");inp.value=cfg.reg[o.id]!==undefined?cfg.reg[o.id]:"";return}
+    persistCfg();updateAssignSummary()};
+   b.appendChild(inp);w.appendChild(a);w.appendChild(b);d.appendChild(w)});
+  root.appendChild(d)});updateAssignSummary()}
+
+/* -- المراكز والمكاتب -- */
+function officeTotalsText(){let M=cfg.centres.reduce((a,c)=>a+c.men,0),W=cfg.centres.reduce((a,c)=>a+c.women,0);return "المجموع: "+cfg.centres.length+" مركزاً — رجال "+M+" + نساء "+W+" = "+(M+W)+" مكتباً"}
+function renderOfficeManager(){
+ let root=$("manageOffices");root.innerHTML="";$("officeTotals").textContent=officeTotalsText();
+ cfg.centres.forEach((c,i)=>{let d=document.createElement("details"),sm=document.createElement("summary");
+  sm.textContent=c.name+" — "+(c.men+c.women)+" مكاتب (رجال "+c.men+"، نساء "+c.women+")";d.appendChild(sm);
+  let row=document.createElement("div");row.className="row";
+  [["men","مكاتب الرجال"],["women","مكاتب النساء"]].forEach(g=>{let w=document.createElement("div");w.innerHTML="<label>"+g[1]+"</label>";let inp=document.createElement("input");inp.type="number";inp.min="0";inp.value=c[g[0]];inp.onchange=()=>setOfficeCount(i,g[0],inp.value,inp,sm);w.appendChild(inp);row.appendChild(w)});
+  d.appendChild(row);
+  let bt=document.createElement("div");bt.innerHTML=`<button class="action secondary" onclick="renameCentre(${i})">تعديل اسم المركز</button><button class="action danger" onclick="deleteCentre(${i})">حذف المركز</button>`;d.appendChild(bt);
+  root.appendChild(d)})}
+function afterOfficeChange(){persistCfg();renderManager();renderAssign();renderOfficeManager()}
+function setOfficeCount(i,g,v,inp,sm){
+ let c=cfg.centres[i],t=normNum(v),n=Number(t),tag=g==="men"?"-m":"-w",other=g==="men"?c.women:c.men;
+ if(!/^\d+$/.test(t)||n>40){alert("أدخل عدداً صحيحاً بين 0 و40.");inp.value=c[g];return}
+ if(n+other<1){alert("يجب أن يبقى في المركز مكتب واحد على الأقل (أو احذف المركز).");inp.value=c[g];return}
+ for(let k=n+1;k<=c[g];k++){if(records[c.id+tag+k]){alert("لا يمكن تقليل العدد: نتائج المكتب "+k+" محفوظة. صحّح أو امسح النتائج أولاً.");inp.value=c[g];return}}
+ for(let k=n+1;k<=c[g];k++){delete cfg.assign[c.id+tag+k];delete cfg.reg[c.id+tag+k]}
+ c[g]=n;persistCfg();renderManager();renderAssign();
+ sm.textContent=c.name+" — "+(c.men+c.women)+" مكاتب (رجال "+c.men+"، نساء "+c.women+")";$("officeTotals").textContent=officeTotalsText()}
+function addCentre(){let name=$("newCentreName").value.trim();
+ if(!name){alert("اكتب اسم المركز.");return}
+ if(cfg.centres.some(c=>c.name===name)){alert("هذا المركز موجود بالفعل.");return}
+ let n=1+Math.max(0,...cfg.centres.map(c=>Number(String(c.id).slice(1))||0));
+ cfg.centres.push({id:"c"+n,name,men:0,women:0});$("newCentreName").value="";afterOfficeChange()}
+function renameCentre(i){let name=prompt("الاسم الجديد للمركز:",cfg.centres[i].name);if(!name||!name.trim())return;name=name.trim();
+ if(cfg.centres.some((c,j)=>j!==i&&c.name===name)){alert("اسم المركز مستخدم.");return}
+ cfg.centres[i].name=name;afterOfficeChange()}
+function deleteCentre(i){let c=cfg.centres[i];
+ if(Object.keys(records).some(id=>id.startsWith(c.id+"-"))){alert("لا يمكن حذف مركز لديه نتائج محفوظة.");return}
+ if(!confirm("تأكيد حذف المركز "+c.name+"؟"))return;
+ Object.keys(cfg.assign).forEach(k=>{if(k.startsWith(c.id+"-"))delete cfg.assign[k]});Object.keys(cfg.reg).forEach(k=>{if(k.startsWith(c.id+"-"))delete cfg.reg[k]});
+ cfg.centres.splice(i,1);afterOfficeChange()}
+
+
+/* ===== استيراد الملفات (CSV / Excel) ===== */
+let pendingCentres=null,pendingLists=null;
+function normNum(s){return String(s==null?"":s).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).trim()}
+function detectDelim(t){let line=(t.split(/\r?\n/).find(l=>l.trim()!=="")||"");let c={",":0,";":0,"\t":0};let q=false;for(const ch of line){if(ch==='"')q=!q;else if(!q&&ch in c)c[ch]++}return c[";"]>c[","]&&c[";"]>=c["\t"]?";":(c["\t"]>c[","]?"\t":",")}
+function parseCSV(t){let d=detectDelim(t),rows=[],row=[],f="",q=false;
+ for(let i=0;i<t.length;i++){let c=t[i];
+  if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+  else if(c==='"')q=true;
+  else if(c===d){row.push(f);f=""}
+  else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;row.push(f);rows.push(row);row=[];f=""}
+  else f+=c}
+ row.push(f);rows.push(row);
+ return rows.map(r=>r.map(x=>x.trim())).filter(r=>r.some(x=>x!==""))}
+async function readTable(file){
+ let buf=await file.arrayBuffer();
+ if(/\.xlsx?$/i.test(file.name)){
+  if(!window.XLSX)throw new Error("مكتبة Excel غير محمّلة (تحتاج اتصالاً بالإنترنت). احفظ الملف بصيغة CSV وأعد المحاولة.");
+  let wb=XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:""}).map(r=>r.map(c=>String(c==null?"":c).trim())).filter(r=>r.some(x=>x!==""))}
+ let text;try{text=new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){try{text=new TextDecoder("windows-1256").decode(buf)}catch(e2){text=new TextDecoder().decode(buf)}}
+ return parseCSV(text.replace(/^\ufeff/,""))}
+function parseCentresRows(rows){
+ let list=[],names=new Set();
+ rows.forEach((r,i)=>{
+  if(i===0&&(r[1]===undefined||r[1]===""||!/^\d+$/.test(normNum(r[1]))))return;
+  let line=i+1,name=(r[0]||"").trim();
+  if(!name)throw new Error("السطر "+line+": اسم المركز فارغ.");
+  if(names.has(name))throw new Error("السطر "+line+": المركز «"+name+"» مكرر.");
+  let m=normNum(r[1]||"0"),w=normNum(r[2]||"0");
+  if(!/^\d+$/.test(m)||!/^\d+$/.test(w))throw new Error("السطر "+line+": مكاتب الرجال والنساء يجب أن تكون أعداداً صحيحة.");
+  m=Number(m);w=Number(w);
+  if(m>40||w>40)throw new Error("السطر "+line+": عدد المكاتب أكبر من 40.");
+  if(m+w<1)throw new Error("السطر "+line+": المركز «"+name+"» بلا أي مكتب.");
+  names.add(name);list.push({name,men:m,women:w})});
+ if(!list.length)throw new Error("الملف لا يحتوي على أي مركز.");
+ if(list.length>300)throw new Error("عدد المراكز أكبر من 300.");
+ return list}
+function applyListsFrom(lists,keepFollow){
+ cfg.lists=lists.map(l=>({name:l.name,cands:l.cands.slice()}));
+ if(!keepFollow){cfg.follow={};lists.forEach((l,p)=>l.stars.forEach(i=>{cfg.follow[p+"-"+i]=1}))}}
+function parseListsRows(rows){
+ let lists=[],idx={};
+ rows.forEach((r,i)=>{
+  if(i===0&&/^(القائمة|اسم القائمة|رقم القائمة|list)$/i.test((r[0]||"").trim()))return;
+  let line=i+1,ln=(r[0]||"").trim(),cn=(r[1]||"").trim();
+  if(!ln||!cn)throw new Error("السطر "+line+": يجب ملء اسم القائمة واسم المترشح.");
+  if(!(ln in idx)){idx[ln]=lists.length;lists.push({name:ln,cands:[],stars:[]})}
+  lists[idx[ln]].cands.push(cn);if(/^(\*|★|⭐|1|نعم|x|yes|y)$/i.test((r[2]||"").trim()))lists[idx[ln]].stars.push(lists[idx[ln]].cands.length-1)});
+ if(!lists.length)throw new Error("الملف لا يحتوي على أي قائمة.");
+ if(lists.length>80)throw new Error("عدد القوائم أكبر من 80.");
+ lists.forEach(l=>{if(l.cands.length>80)throw new Error("القائمة «"+l.name+"» فيها أكثر من 80 مترشحاً.")});
+ return lists}
+async function pickSetupFile(kind,input){
+ let st=$(kind==="centres"?"stCentresSetup":"stListsSetup"),f=input.files&&input.files[0];
+ if(!f){if(kind==="centres")pendingCentres=null;else pendingLists=null;st.textContent="";return}
+ try{let rows=await readTable(f);
+  if(kind==="centres"){pendingCentres=parseCentresRows(rows);st.style.color="#17613d";st.textContent="✓ "+pendingCentres.length+" مركزاً، "+pendingCentres.reduce((a,c)=>a+c.men+c.women,0)+" مكتباً."}
+  else{pendingLists=parseListsRows(rows);st.style.color="#17613d";st.textContent="✓ "+pendingLists.length+" قائمة، "+pendingLists.reduce((a,l)=>a+l.cands.length,0)+" مترشحاً."}
+ }catch(e){if(kind==="centres")pendingCentres=null;else pendingLists=null;st.style.color="#a83232";st.textContent=e.message;input.value=""}}
+async function importFile(kind,input){
+ let msg=$("importMsg"),f=input.files&&input.files[0];if(!f)return;
+ msg.style.color="#a83232";
+ try{
+  let rows=await readTable(f);
+  if(kind==="centres"){
+   let list=parseCentresRows(rows);
+   if(hasResults())throw new Error("لا يمكن تغيير المراكز والمكاتب بعد حفظ نتائج. امسح النتائج أولاً.");
+   if(!confirm("سيتم استبدال المراكز الحالية ("+cfg.centres.length+") بـ "+list.length+" مركزاً من الملف. توزيع الممثلين وأعداد المسجلين تبقى للمراكز التي لها الاسم نفسه. متابعة؟"))return;
+   let old=cfg.centres,max=Math.max(0,...old.map(c=>Number(String(c.id).slice(1))||0));
+   cfg.centres=list.map(x=>{let o=old.find(c=>c.name===x.name);return{id:o?o.id:"c"+(++max),name:x.name,men:x.men,women:x.women}});
+   let valid=new Set(allOffices().map(o=>o.id));
+   Object.keys(cfg.assign).forEach(k=>{if(!valid.has(k))delete cfg.assign[k]});Object.keys(cfg.reg).forEach(k=>{if(!valid.has(k))delete cfg.reg[k]});
+   persistCfg();renderAll();msg.style.color="#17613d";msg.textContent="✓ تم استيراد "+list.length+" مركزاً ("+allOffices().length+" مكتباً).";
+  }else{
+   let lists=parseListsRows(rows);
+   let same=lists.length===cfg.lists.length&&lists.every((l,i)=>l.cands.length===cfg.lists[i].cands.length);
+   if(hasResults()&&!same)throw new Error("لا يمكن تغيير عدد القوائم أو المترشحين بعد حفظ نتائج. يمكنك فقط استيراد ملف بالأعداد نفسها لتحديث الأسماء.");
+   if(!confirm("سيتم استبدال القوائم والمترشحين الحاليين بـ "+lists.length+" قائمة ("+lists.reduce((a,l)=>a+l.cands.length,0)+" مترشحاً) من الملف. متابعة؟"))return;
+   applyListsFrom(lists,same&&!lists.some(l=>l.stars.length));persistCfg();renderAll();msg.style.color="#17613d";msg.textContent="✓ تم استيراد "+lists.length+" قائمة.";
+  }
+ }catch(e){msg.textContent=e.message}
+ input.value=""}
+function downloadTemplate(kind){
+ let rows=kind==="centres"?[["المركز","مكاتب الرجال","مكاتب النساء"],["المدرسة الابتدائية الأولى","2","2"],["المتوسطة الجديدة","1","1"]]:[["القائمة","المترشح","متابع (ضع * للمترشح المتابع)"],["قائمة النور","المترشح الأول","*"],["قائمة النور","المترشح الثاني",""],["قائمة الأمل","المترشح الأول",""]];
+ let csv=rows.map(r=>r.map(x=>'"'+x+'"').join(",")).join("\n");
+ let a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download=kind==="centres"?"نموذج_المراكز.csv":"نموذج_القوائم.csv";a.click();URL.revokeObjectURL(a.href)}
+
+
+/* ===== إرسال/استقبال النتائج عبر واتساب ===== */
+function normPhone(raw){let t=normNum(raw).replace(/[^\d+]/g,"");if(t.startsWith("+"))return t.slice(1).replace(/\D/g,"");let d=t.replace(/\D/g,"");if(d.startsWith("00"))return d.slice(2);if(d.startsWith("0"))return DEFAULT_CC+d.slice(1);if(d.length===9)return DEFAULT_CC+d;return d}
+function saveWaPhone(){localStorage.setItem(K("wa"),$("waPhone").value.trim())}
+function buildMessage(id){
+ let r=records[id],o=allOffices().find(x=>x.id===id),u=userById(r.by)||userById(session)||{name:""},L=[];
+ L.push("📊 نتائج "+cfg.name);
+ L.push("🏫 "+o.centre+" — "+o.office+" ("+o.gender+")");
+ L.push("👤 الممثل: "+u.name);
+ L.push("المسجلون: "+r.registered+" | المعبر عنها: "+r.expressed+" | الملغاة: "+r.cancelled);
+ cfg.lists.forEach((l,p)=>L.push("القائمة "+(p+1)+" ("+l.name+"): "+r.listTotals[p]));
+ L.push(["EL1",BID,id,r.registered,r.expressed,r.cancelled,r.listTotals.join(","),r.votes.map(a=>a.join(",")).join(";"),r.by||session,"#"].join("|"));
+ followedList().forEach(f=>L.push("★ "+f.name+": "+((r.votes[f.p]&&r.votes[f.p][f.i])||0)));
+ L.push("🕒 "+r.updated);
+ return L.join("\n")}
+function sendWhatsApp(){
+ let id=$("office").value;if(!id||!records[id]){alert("احفظ نتائج هذا المكتب أولاً ثم أرسلها.");return}
+ let raw=$("waPhone").value.trim(),ph=raw?normPhone(raw):"";
+ if(raw&&(ph.length<10||ph.length>15)){alert("رقم الواتساب غير صحيح. مثال: 0550123456 أو ‎+213550123456‎");return}
+ window.open("https://wa.me/"+ph+"?text="+encodeURIComponent(buildMessage(id)),"_blank")}
+function copyResultMsg(){
+ let id=$("office").value;if(!id||!records[id]){alert("احفظ نتائج هذا المكتب أولاً.");return}
+ let m=buildMessage(id);
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(m).then(()=>alert("تم نسخ الرسالة.")).catch(()=>prompt("انسخ الرسالة:",m));
+ else prompt("انسخ الرسالة:",m)}
+function applyWaCode(c,force){
+ let f=c.split("|");if(f.length<8)throw new Error("الرسالة مبتورة: وصل جزء من الرمز فقط. اطلب من الممثل إعادة الإرسال بزر «نسخ الرسالة» (أو إرسالها على جزأين).");
+ let bid=f[1],id=f[2],ex=Number(f[4]),ca=Number(f[5]),by=f[8]||"";
+ if(bid!==BID)throw new Error("الرسالة تخص بلدية أو مترشحاً آخر («"+bid+"»).");
+ let o=allOffices().find(x=>x.id===id);if(!o)throw new Error("المكتب «"+id+"» غير موجود في هذا التطبيق.");
+ let tot=f[6].split(",").map(Number),votes=f[7].split(";").map(a=>a.split(",").map(Number));
+ if(tot.length!==cfg.lists.length||votes.length!==cfg.lists.length||votes.some((a,p)=>a.length!==cfg.lists[p].cands.length))throw new Error("بنية القوائم والمترشحين لا تطابق إعدادات هذا التطبيق (أو أن الرسالة وصلت مبتورة).");
+ [ex,ca].concat(tot,votes.flat()).forEach(x=>{if(!Number.isInteger(x)||x<0)throw new Error("أعداد غير صالحة.")});
+ let reg=cfg.reg[id]!==undefined?Number(cfg.reg[id]):Number(f[3]);
+ if(!Number.isInteger(reg)||reg<0)throw new Error("عدد المسجلين غير معروف لهذا المكتب.");
+ let name=o.centre+" — "+o.office;
+ if(ex+ca>reg)throw new Error(name+": المعبر عنها + الملغاة ("+(ex+ca)+") تتجاوز المسجلين ("+reg+").");
+ let ls=tot.reduce((a,b)=>a+b,0);if(ls>ex)throw new Error(name+": مجموع القوائم ("+ls+") يتجاوز المعبر عنها ("+ex+").");
+ for(let p=0;p<tot.length;p++){let d=votes[p].reduce((a,b)=>a+b,0);if(d>tot[p])throw new Error(name+": مترشحو القائمة "+(p+1)+" ("+d+") يتجاوزون مجموع القائمة ("+tot[p]+").")}
+ let old=records[id];
+ if(old&&old.expressed===ex&&old.cancelled===ca&&JSON.stringify(old.listTotals)===JSON.stringify(tot)&&JSON.stringify(old.votes)===JSON.stringify(votes))return "same";
+ if(old&&!force&&!confirm("للمكتب «"+name+"» نتيجة محفوظة. هل تستبدلها بالنتيجة الواردة؟"))throw new Error(name+": لم تُستبدل النتيجة الحالية.");
+ records[id]={centre:o.centre,office:o.office,by:userById(by)?by:"wa",listTotals:tot,registered:reg,expressed:ex,cancelled:ca,votes:votes,updated:new Date().toLocaleString("ar-DZ"),ts:Date.now()};
+ persistRecords();cloudSaveRecord(id);return "ok"}
+function extractWaCodes(t){let codes=(t.match(/EL1\|[A-Za-z0-9_,;.\-|\s]*?\|#/g)||[]).map(c=>c.replace(/\s+/g,"").replace(/\|#$/,""));if(!codes.length)codes=t.match(/EL1\|[^\s]+/g)||[];return codes}
+function runWaImport(codes,auto){
+ let ok=0,same=0,errs=[];
+ codes.forEach((c,n)=>{try{let r=applyWaCode(c,auto);if(r==="same")same++;else ok++}catch(e){errs.push("الرسالة "+(n+1)+": "+e.message)}});
+ renderManager();let msg=$("waMsg");msg.style.color=errs.length?"#a83232":"#17613d";
+ msg.textContent=(ok?"✓ تم تسجيل "+ok+" نتيجة. ":"")+(same?"بدون تغيير: "+same+". ":"")+errs.join(" — ");
+ return{ok:ok,same:same,errs:errs}}
+function importWa(){
+ let codes=extractWaCodes($("waPaste").value),msg=$("waMsg");
+ if(!codes.length){msg.style.color="#a83232";msg.textContent="لم أجد أي رسالة نتائج صالحة. الصق الرسالة كاملة بما فيها السطر الذي يبدأ بـ EL1.";return}
+ let r=runWaImport(codes,false);if(r.ok)$("waPaste").value=""}
+/* --- تنبيه المدير: رسائل منسوخة في الانتظار (نعم/لا) --- */
+function toast(t){let e=$("toast");e.textContent=t;e.classList.remove("hidden");clearTimeout(toast._t);toast._t=setTimeout(()=>e.classList.add("hidden"),5000)}
+function askUpdate(text){return new Promise(res=>{$("askText").innerHTML=text;$("askBox").classList.remove("hidden");
+ const done=v=>{$("askBox").classList.add("hidden");res(v)};$("askYes").onclick=()=>done(true);$("askNo").onclick=()=>done(false)})}
+function strHash(t){let h=0;for(let i=0;i<t.length;i++){h=(h*31+t.charCodeAt(i))|0}return String(h)}
+let clipBusy=false,lastClipAt=0;
+async function checkClipboard(manual){
+ if(session!=="mgr"||clipBusy||!cfg.setupDone)return;
+ if(!manual&&Date.now()-lastClipAt<1500)return;lastClipAt=Date.now();clipBusy=true;
+ try{
+  if(!navigator.clipboard||!navigator.clipboard.readText){if(manual)alert("متصفحك لا يسمح بقراءة الحافظة. الصق الرسائل في الخانة أدناه.");return}
+  let t=await navigator.clipboard.readText(),codes=extractWaCodes(t);
+  if(!codes.length){if(manual)toast("لا توجد رسالة نتائج منسوخة في الحافظة.");return}
+  let key=strHash(codes.join("\n"));
+  if(!manual&&key===localStorage.getItem(K("clip")))return;
+  let names=codes.slice(0,5).map(c=>{let o=allOffices().find(x=>x.id===c.split("|")[2]);return o?esc(o.centre+" — "+o.office):"مكتب غير معروف"});
+  let yes=await askUpdate("لديك <b>"+codes.length+"</b> رسالة نتائج منسوخة في الانتظار:<br>"+names.join("<br>")+(codes.length>5?"<br>…":"")+"<br><br>هل تريد تحديث النتائج الآن؟");
+  localStorage.setItem(K("clip"),key);
+  if(yes){let r=runWaImport(codes,true);toast(r.errs.length?"تم تسجيل "+r.ok+" وتعذّر "+r.errs.length+" (التفاصيل في قسم استقبال النتائج)":"✓ تم تحديث النتائج ("+r.ok+" مكتب"+(r.same?"، "+r.same+" بدون تغيير":"")+")")}
+ }catch(e){if(manual)alert("تعذّرت قراءة الحافظة (اسمح للمتصفح بالوصول إليها) أو الصق الرسائل يدوياً.")}
+ finally{clipBusy=false}}
+if(typeof document.addEventListener==="function"){document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkClipboard(false)})}
+if(typeof window.addEventListener==="function"){window.addEventListener("focus",()=>checkClipboard(false))}
+let resSeen=false;
+
+
+/* ===== إعداد الاتصال بالخادم من الواجهة ===== */
+function fbSaved(){try{return JSON.parse(localStorage.getItem("el_fb")||"null")}catch(e){return null}}
+function fbEnc(){
+ let st=fbSaved()||(FB.apiKey?{k:FB.apiKey,a:FB.appId,p:FB.projectId}:null);if(!st)return "";
+ return btoa(JSON.stringify({k:st.k,a:st.a,p:st.p||FB.projectId})).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function fbLink(){let e=fbEnc();if(!e)return "";return location.origin+location.pathname+"?b="+BID+"&fb="+e}
+function renderFb(){
+ let st=fbSaved();$("fbKey").value=st?st.k:(FB.apiKey||"");$("fbApp").value=st?st.a:(FB.appId||"");$("fbProj").value=st?(st.p||FB.projectId):FB.projectId;
+ $("fbStatus").textContent=CLOUD_ON?"الاتصال مفعّل — المشروع: "+FB.projectId+(BID==="default"?" — ⚠ رمز البلدية الحالي «default» مشترك: إن استعمله فريق آخر اختلطت النتائج. استعمل رمزاً خاصاً طويلاً في الرابط، مثل ‎?b=اسم-xk7q2‎":""):(FB_BAD?"⚠ القيم المحفوظة غير صحيحة، فلم يُفعَّل الاتصال. صحّحها أدناه ثم اضغط «حفظ وتفعيل».":"وضع محلي: لم يُفعَّل الاتصال بالخادم بعد.");
+ $("fbLinkBox").classList.toggle("hidden",!CLOUD_ON);$("fbLink").value=CLOUD_ON?fbLink():""}
+function saveFb(){
+ let k=fbClean($("fbKey").value),a=fbClean($("fbApp").value),p=fbClean($("fbProj").value);
+ if(!k||!a||!p){alert("أدخل apiKey و appId و projectId.");return}
+ if(!fbValid.p(p)){alert("projectId غير صحيح.");return}
+ if(!fbValid.k(k)){alert("apiKey غير صحيح: يجب أن يبدأ بـ AIza ويتكون من نحو 39 حرفاً، بلا علامات اقتباس.");return}
+ if(!fbValid.a(a)){alert("appId غير صحيح: يجب أن يكون بالشكل 1:123456789:web:abcdef123 (قيمة appId وحدها، بلا apiKey ولا علامات اقتباس).");return}
+ localStorage.setItem("el_fb",JSON.stringify({k:k,a:a,p:p}));alert("تم الحفظ. ستُعاد تحميل الصفحة للاتصال بالخادم.");if(typeof location.reload==="function")location.reload()}
+function fillFbFromText(pre){let r=parseFbText($(pre==="set"?"setFbPaste":"fbPaste").value);
+ if(r.k)$(pre==="set"?"setFbKey":"fbKey").value=r.k;if(r.a)$(pre==="set"?"setFbApp":"fbApp").value=r.a;if(r.p)$(pre==="set"?"setFbProj":"fbProj").value=r.p}
+function clearFb(){
+ if(!confirm("إيقاف الاتصال بالخادم على هذا الجهاز؟ (تبقى بياناتك محفوظة على الخادم)"))return;
+ localStorage.removeItem("el_fb");if(typeof location.reload==="function")location.reload()}
+function copyFbLink(){let l=fbLink();if(!l)return;
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(l).then(()=>toast("تم نسخ رابط الممثلين")).catch(()=>prompt("انسخ الرابط:",l));else prompt("انسخ الرابط:",l)}
+function shareFbLink(){let l=fbLink();if(!l)return;window.open("https://wa.me/?text="+encodeURIComponent("رابط تطبيق "+cfg.name+" للممثلين (افتحه مرة واحدة ثم ادخل برمزك):\n"+l),"_blank")}
+
+
+async function downloadModified(opts){
+ let st=fbSaved()||(FB.apiKey?{k:FB.apiKey,a:FB.appId,p:FB.projectId}:null);
+ if(opts.needFb&&!st){alert("فعّل الاتصال بالخادم أولاً.");return}
+ try{
+  let r=await fetch(location.pathname,{cache:"no-store"});if(!r.ok)throw new Error("تعذّر قراءة ملف التطبيق ("+r.status+")");
+  let t=await r.text();
+  if(st){let re=/const FIREBASE_CONFIG=\{[^}]*\};/;if(!re.test(t))throw new Error("لم أجد موضع الإعداد في الملف.");
+   let pj=st.p||FB.projectId;t=t.replace(re,()=>'const FIREBASE_CONFIG={apiKey:"'+st.k+'",authDomain:"'+pj+'.firebaseapp.com",projectId:"'+pj+'",appId:"'+st.a+'"};')}
+  if(opts.hash){let re2=/const CREATE_PASS_HASH="[0-9a-f]*";/;if(!re2.test(t))throw new Error("لم أجد موضع كلمة السر في الملف.");t=t.replace(re2,()=>'const CREATE_PASS_HASH="'+opts.hash+'";')}
+  let name=decodeURIComponent((location.pathname.split("/").pop()||"index.html"))||"index.html";
+  let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([t],{type:"text/html;charset=utf-8"}));a.download=name;a.click();URL.revokeObjectURL(a.href);
+  toast("تم تنزيل «"+name+"». ارفعه على GitHub بنفس الاسم ليحل محل الملف الحالي.");
+ }catch(e){alert("تعذّر تجهيز الملف: "+e.message)}}
+function downloadConfigured(){return downloadModified({needFb:true})}
+
+/* ===== مولّد النسخ + كلمة سر الإنشاء ===== */
+function sha256(str){
+ const r=(n,x)=>(x>>>n)|(x<<(32-n));
+ let K=[],H=[],pr=[],c=2;
+ while(pr.length<64){let ok=true;for(const q of pr){if(q*q>c)break;if(c%q===0){ok=false;break}}if(ok)pr.push(c);c++}
+ pr.forEach((p,i)=>{K[i]=Math.floor((Math.cbrt(p)%1)*4294967296)>>>0;if(i<8)H[i]=Math.floor((Math.sqrt(p)%1)*4294967296)>>>0});
+ let b=Array.from(new TextEncoder().encode(str)),l=b.length*8;b.push(0x80);while(b.length%64!==56)b.push(0);
+ for(let i=7;i>=0;i--)b.push(i>=4?0:(l>>>(i*8))&255);
+ for(let o=0;o<b.length;o+=64){
+  let w=[];for(let i=0;i<16;i++)w[i]=(b[o+4*i]<<24)|(b[o+4*i+1]<<16)|(b[o+4*i+2]<<8)|b[o+4*i+3];
+  for(let i=16;i<64;i++){let s0=r(7,w[i-15])^r(18,w[i-15])^(w[i-15]>>>3),s1=r(17,w[i-2])^r(19,w[i-2])^(w[i-2]>>>10);w[i]=(w[i-16]+s0+w[i-7]+s1)|0}
+  let [a,b2,c2,d,e,f,g,h]=H;
+  for(let i=0;i<64;i++){let S1=r(6,e)^r(11,e)^r(25,e),ch=(e&f)^(~e&g),t1=(h+S1+ch+K[i]+w[i])|0,S0=r(2,a)^r(13,a)^r(22,a),mj=(a&b2)^(a&c2)^(b2&c2),t2=(S0+mj)|0;h=g;g=f;f=e;e=(d+t1)|0;d=c2;c2=b2;b2=a;a=(t1+t2)|0}
+  H=[H[0]+a,H[1]+b2,H[2]+c2,H[3]+d,H[4]+e,H[5]+f,H[6]+g,H[7]+h].map(x=>x|0)}
+ return H.map(x=>(x>>>0).toString(16).padStart(8,"0")).join("")}
+const passHash=p=>sha256("el1|"+String(p||"").trim());
+const passOk=p=>!CREATE_PASS_HASH||passHash(p)===CREATE_PASS_HASH;
+function cpOk(){try{return sessionStorage.getItem("el_cp_ok")==="1"}catch(e){return false}}
+function setCpOk(){try{sessionStorage.setItem("el_cp_ok","1")}catch(e){}}
+const baseUrl=()=>location.origin+location.pathname;
+function codeSuffix(){return (FIREBASE_CONFIG.apiKey&&FIREBASE_CONFIG.appId)?"":(fbEnc()?"&fb="+fbEnc():"")}
+function openCode(code){location.href=baseUrl()+"?b="+code+codeSuffix()}
+function renderGen(){
+ $("genForm").classList.toggle("hidden",!CREATE_PASS_HASH);
+ $("genProv").open=!CREATE_PASS_HASH;
+ $("provOldBox").classList.toggle("hidden",!CREATE_PASS_HASH)}
+function genCode(){
+ let pa=$("genParty").value.trim().toLowerCase(),nu=normNum($("genNum").value),co=$("genCommune").value.trim().toLowerCase();
+ if(!/^[a-z]{3}$/.test(pa))throw new Error("رمز الحزب: ثلاثة أحرف لاتينية فقط (مثل rnd).");
+ if(!/^\d{1,2}$/.test(nu))throw new Error("رقم المترشح: رقم من خانة أو خانتين (مثل 01).");
+ if(!/^[a-z0-9]{3,20}$/.test(co))throw new Error("اسم البلدية: حروف لاتينية وأرقام فقط، من 3 إلى 20 (مثل hamala).");
+ return pa+nu.padStart(2,"0")+"-"+co}
+async function makeLink(){
+ let msg=$("genMsg");msg.style.color="#a83232";$("genResult").classList.add("hidden");
+ try{
+  if(!CREATE_PASS_HASH)throw new Error("لم تُعيَّن كلمة سر الإنشاء بعد (انظر قسم «لصاحب التطبيق»).");
+  if(!passOk($("genPass").value))throw new Error("كلمة السر غير صحيحة.");
+  let code=genCode();
+  if(db){let ex=false;try{let d=await db.collection("el_cfg").doc(code).get({source:"server"});ex=d.exists}catch(e){}
+   if(ex)throw new Error("الرمز «"+code+"» مستعمل بالفعل لدى مترشح آخر. غيّر رقم المترشح أو اسم البلدية.")}
+  $("genLink").value=baseUrl()+"?b="+code+codeSuffix()+"&setup=1";$("genResult").classList.remove("hidden");
+  msg.style.color="#17613d";msg.textContent="✓ الرمز «"+code+"» متاح"+(db?"":" (لم يُتحقق من عدم تكراره لأن الاتصال بالخادم غير مفعّل على هذا الجهاز)");
+ }catch(e){msg.textContent=e.message}}
+function copyGenLink(){let l=$("genLink").value;if(!l)return;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(l).then(()=>toast("تم نسخ الرابط")).catch(()=>prompt("انسخ الرابط:",l));else prompt("انسخ الرابط:",l)}
+function shareGenLink(){let l=$("genLink").value;if(!l)return;window.open("https://wa.me/?text="+encodeURIComponent("رابط تطبيق متابعة النتائج الخاص بك (افتحه ثم أنشئ نسخة المترشح بكلمة سر الإنشاء):\n"+l),"_blank")}
+function openGenLink(){let l=$("genLink").value;if(!l)return;setCpOk();location.href=l}
+function enterExisting(){let c=$("genExisting").value.trim().toLowerCase().replace(/[^a-z0-9_-]/g,"");
+ if(!c){$("genExMsg").textContent="اكتب رمز الفريق.";return}openCode(c)}
+async function downloadProtected(){
+ let np=$("provPass").value;
+ if(CREATE_PASS_HASH&&!passOk($("provOld").value)){alert("كلمة السر الحالية غير صحيحة.");return}
+ if(np.trim().length<8){alert("كلمة السر 8 خانات على الأقل.");return}
+ if(np!==$("provPass2").value){alert("تأكيد كلمة السر غير مطابق.");return}
+ await downloadModified({hash:passHash(np)})}
+
+/* ===== طبقة Firebase (Firestore): el_cfg/{رمز البلدية} و el_res/{رمز البلدية__المكتب} ===== */
+const rid=id=>BID+"__"+encodeURIComponent(id);
+function setBadge(t,c){let b=$("cloudBadge");if(b){b.textContent=t;b.style.background=c||"#e9eef3"}}
+function pushConfig(){if(!db)return;clearTimeout(cfgTimer);
+ cfgTimer=setTimeout(()=>{db.collection("el_cfg").doc(BID).set(Object.assign({},cfg,{updated:Date.now()})).then(()=>{cloudEmpty=false}).catch(e=>console.error(e))},500)}
+function cloudSaveRecord(id){if(!db)return;let r=records[id];if(!r)return;
+ let vt={};(r.votes||[]).forEach((a,i)=>{vt[String(i)]=a});
+ let doc=Object.assign({},r,{id:id,b:BID,votes:vt});
+ db.collection("el_res").doc(rid(id)).set(doc).then(()=>{let st=$("saveStatus");if(session!=="mgr"&&st&&st.style.display==="block")st.textContent="تم إرسال نتائج "+r.centre+" — "+r.office+" إلى المدير ✓"}).catch(e=>console.error(e))}
+function cloudClear(){db.collection("el_res").where("b","==",BID).get().then(q=>{let b=db.batch();q.forEach(d=>b.delete(d.ref));return b.commit()}).catch(e=>alert("تعذر الحذف من الخادم: "+e.message))}
+function applyConfig(d){cfg=Object.assign(emptyCfg(),d);delete cfg.updated;localStorage.setItem(K("cfg"),JSON.stringify(cfg))}
+function afterConfig(prevSig){try{_afterConfig(prevSig)}finally{if(!userMoved)topNow()}}
+function _afterConfig(prevSig){
+ fillLoginUsers();let u=applyPanels();
+ if(!u){show("");return}
+ if(session==="mgr"){if($("mgr").contains(document.activeElement))renderManager();else show("mgr");return}
+ if(structSig()!==prevSig)show("rep");
+ else{let o=$("office").value;$("registered").value=cfg.reg[o]!==undefined?cfg.reg[o]:"";updateOfficeCheck();refreshNames();if(!$("waPhone").value)$("waPhone").value=cfg.managerPhone||""}}
+function startCloud(){
+ db.collection("el_cfg").doc(BID).onSnapshot(snap=>{
+  if(snap.metadata.hasPendingWrites)return;
+  let prev=structSig();
+  if(snap.exists){applyConfig(snap.data());cloudEmpty=false}
+  else if(!snap.metadata.fromCache){cloudEmpty=true;if(session==="mgr"&&cfg.setupDone)pushConfig()}
+  else return;
+  cloudReady=true;afterConfig(prev);
+ },e=>{console.error(e);setBadge("خطأ في الاتصال بالخادم: "+e.code,"#fbe7e7");cloudReady=true;applyPanels()});
+ db.collection("el_res").where("b","==",BID).onSnapshot({includeMetadataChanges:true},snap=>{
+  let m={},pending=0,pendIds=new Set();
+  snap.forEach(d=>{let x=d.data(),v=x.votes||{};x.votes=Object.keys(v).sort((a,b)=>a-b).map(k=>v[k]);delete x.b;m[x.id]=x;if(d.metadata.hasPendingWrites){pending++;pendIds.add(x.id)}});
+  let ch=0;if(resSeen&&session==="mgr")Object.keys(m).forEach(k=>{if(!pendIds.has(k)&&(!records[k]||records[k].updated!==m[k].updated))ch++});
+  records=m;persistRecords();resSeen=true;if(ch)toast("وصلت نتائج جديدة: "+ch+" مكتب");
+  if(pending>0)setBadge("بانتظار الإرسال ("+pending+") — سيُرسل عند توفر الاتصال","#fff3d6");
+  else if(snap.metadata.fromCache)setBadge("غير متصل — يعمل بالبيانات المحفوظة","#fff3d6");
+  else setBadge("متزامن مع الخادم ✓","#dff3e8");
+  if(session==="mgr"){if(!$("mgr").classList.contains("hidden"))renderManager()}else if(userById(session)&&cfg.setupDone)updateOfficeState();
+ },e=>{console.error(e);setBadge("خطأ في الاتصال بالخادم: "+e.code,"#fbe7e7")});
+ setTimeout(()=>{if(!cloudReady){cloudReady=true;setBadge("تعذر الوصول إلى الخادم — بيانات محفوظة على الجهاز","#fff3d6");applyPanels()}},8000)}
+if(CLOUD_ON){setBadge("جارٍ الاتصال بالخادم…");
+ try{firebase.initializeApp(FB);db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{}).then(()=>{if(!NO_CODE)startCloud()})}
+ catch(e){console.error(e);db=null;cloudReady=true;setBadge("وضع محلي — خطأ في إعداد Firebase","#fbe7e7")}}
+else setBadge("وضع محلي — لم يُضبط Firebase بعد");
+
+try{if("scrollRestoration" in history)history.scrollRestoration="manual"}catch(e){}
+let userMoved=false;
+if(typeof window.addEventListener==="function"){["touchstart","wheel","mousedown","keydown"].forEach(ev=>window.addEventListener(ev,()=>{userMoved=true},{once:true,passive:true}))}
+function topNow(){try{window.scrollTo(0,0)}catch(e){}}
+function init(){applyHeader();fillLoginUsers();applySession();topNow();setTimeout(()=>{if(!userMoved)topNow()},400);setTimeout(()=>{if(!userMoved)topNow()},1500)}
+init();
+</script>
+</body>
+</html>
