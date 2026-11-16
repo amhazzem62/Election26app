@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تسجيل مواقع الأطباء</title>
+<style>
+:root{--ink:#17313a;--teal:#0f5c6e;--teal2:#0b4756;--paper:#f4f6f3;--card:#fff;--line:#d5ddd8;--amber:#a86a00;--red:#a62b2b;--green:#1d7a46;--muted:#5d6f75}
+@media (prefers-color-scheme:dark){:root{--ink:#e6eeee;--teal:#3fa3b8;--teal2:#2f8ca0;--paper:#0f1a1d;--card:#172529;--line:#2c3f44;--amber:#e0a23a;--red:#ef8a8a;--green:#6fcf97;--muted:#9bb0b5}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Segoe UI",Tahoma,"Noto Naskh Arabic",Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+header{background:var(--teal2);color:#fff;padding:16px 16px 14px}
+header h1{margin:0;font-size:20px}
+header p{margin:2px 0 0;font-size:13px;opacity:.85}
+main{max-width:620px;margin:0 auto;padding:14px 14px 40px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 10px}
+label{display:block;font-size:14px;font-weight:600;margin:10px 0 4px}
+input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:16px}
+input:focus,button:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+.row{display:flex;gap:10px}.row>div{flex:1;min-width:0}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:13px 14px;cursor:pointer;width:100%;margin-top:10px;background:var(--teal);color:#fff}
+button.sec{background:transparent;color:var(--teal);border:1px solid var(--teal)}
+button.danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+button.ok{background:var(--green);color:#fff}
+button:disabled{opacity:.5}
+.gps{border:1px dashed var(--teal);border-radius:12px;padding:12px;margin-top:12px}
+.coords{font-family:ui-monospace,Menlo,Consolas,monospace;direction:ltr;text-align:center;font-size:17px;margin:6px 0}
+.acc{font-size:13px;text-align:center;color:var(--muted)}
+.acc.bad{color:var(--amber);font-weight:700}
+.msg{font-size:14px;margin-top:8px;min-height:20px}
+.msg.err{color:var(--red)}.msg.good{color:var(--green)}
+.rec{border-top:1px solid var(--line);padding:10px 0;font-size:14px}
+.rec:first-of-type{border-top:0}
+.rec b{font-size:15px}
+.rec small{color:var(--muted);display:block;direction:ltr;text-align:right}
+.rec .acts{display:flex;gap:8px;margin-top:6px}
+.rec .acts a,.rec .acts button{width:auto;margin:0;padding:6px 12px;font-size:13px;border-radius:8px}
+.rec a{color:var(--teal);font-weight:600}
+.found{margin-top:8px;padding:10px;border-radius:10px;font-size:15px;display:none}.found.ok{display:block;background:rgba(29,122,70,.12);border:1px solid var(--green)}.found.no{display:block;background:rgba(166,43,43,.1);border:1px solid var(--red);color:var(--red)}.found b{direction:ltr;unicode-bidi:plaintext}.count{font-weight:700;color:var(--teal)}
+.empty{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<header>
+<h1>تسجيل مواقع الأطباء</h1>
+<p>رمز الطبيب يجلب اسمه، والموقع من هاتفك، والنتيجة ملف Excel</p>
+</header>
+<main>
+
+<section>
+<h2>بيانات الطبيب</h2>
+<label for="code">رمز الطبيب (حتى 10 أرقام)</label>
+<input id="code" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="4302002181" dir="ltr">
+<div id="found" class="found"></div>
+<div class="row">
+<div><label for="nomAr">الاسم بالعربية</label><input id="nomAr" autocomplete="off"></div>
+<div><label for="prenomAr">اللقب بالعربية</label><input id="prenomAr" autocomplete="off"></div>
+</div>
+<label for="place">اسم المكان</label>
+<input id="place" autocomplete="off" placeholder="يُقترح تلقائياً بعد تحديد الموقع">
+<div class="acc" id="placeHint"></div>
+
+<div class="gps">
+<div class="acc" id="gpsHint">قف أمام باب العيادة ثم اضغط «تحديد موقعي الآن»</div>
+<div class="coords" id="coords">—</div>
+<div class="acc" id="acc"></div>
+<button type="button" class="sec" id="btnGps">📍 تحديد موقعي الآن</button>
+<details style="margin-top:8px"><summary style="cursor:pointer;font-size:14px;color:var(--muted)">إدخال الإحداثيات يدوياً</summary>
+<div class="row"><div><label for="latM">خط العرض</label><input id="latM" inputmode="decimal" placeholder="36.4521" dir="ltr"></div>
+<div><label for="lngM">خط الطول</label><input id="lngM" inputmode="decimal" placeholder="6.2630" dir="ltr"></div></div>
+<button type="button" class="sec" id="btnManual">استعمال هذه الإحداثيات</button>
+</details>
+<div id="mapLink" style="text-align:center;margin-top:8px"></div>
+</div>
+
+<div class="msg" id="msg" role="status"></div>
+<button type="button" class="ok" id="btnSave">💾 تسجيل العملية</button>
+</section>
+
+<section>
+<h2>قائمة الأطباء: <span class="count" id="nl">0</span></h2>
+<p class="empty" style="margin:0">ملف Excel بأعمدة: centre، code ps، nom، prenom.</p>
+<input type="file" id="file" accept=".xlsx,.xls,.csv" style="margin-top:8px">
+<div class="msg" id="lMsg" role="status"></div>
+</section>
+
+<section>
+<h2>العمليات المسجلة: <span class="count" id="n">0</span></h2>
+<label for="agent">اسم المسجِّل (يظهر في الملف)</label>
+<input id="agent" autocomplete="name">
+<button type="button" id="btnExport">📤 تصدير ملف Excel</button>
+<div class="msg" id="exMsg" role="status"></div>
+<div id="list"></div>
+<button type="button" class="danger" id="btnClear">مسح كل التسجيلات بعد الإرسال</button>
+</section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var KEY="med_gps_records_v2",KAG="med_gps_agent_v1",KLST="med_gps_list_v1";
+var DEFAULT_LIST=[["14305", "4302002181", "AMARA", "YOUCEF"], ["14305", "4302059061", "BEGHOUL", "MOURAD"], ["14305", "4302022179", "BOUKROUH", "FERHAT"], ["14305", "4302022674", "BOULEKESSAIR", "ABDELAZIZ"], ["14305", "4302059954", "BOUTEBAKH", "AHMED"], ["14305", "4302060080", "BOUTEBAKH", "SAIDA"], ["14305", "4302060476", "HAMIDECHE", "AZZEDDINE"], ["14305", "4302060377", "KEDJOUNE", "AMAR"], ["14305", "4302110974", "NAMOUS", "BACHIR"], ["14309", "4302112178", "BARKAT", "AWATAF"], ["14309", "4302006074", "BEKKOUCHE", "ELHADI"], ["14309", "4302090671", "BOUCHAREB", "RIDA"], ["14309", "4302111774", "BOUKRIA", "DRISSE"], ["14309", "4302112277", "SABOUNI", "HIND"], ["14313", "4302112474", "BELMEHBOUL", "SALIM"], ["14313", "4302111180", "BOULFOUS", "NASRRINE"], ["14313", "4302024175", "BOUSBIA", "CHABANE"], ["14313", "4302025965", "BOUZIDI", "NOUI"], ["14313", "4302038562", "KERDOUNE", "MOUNIR"], ["14313", "4302055863", "ZEMIECHE", "ABBOUD"]];
+var recs=[],pos=null,list=[],map={},placeDirty=false,cur=null;
+
+function pad(n){return n<10?"0"+n:""+n}
+function norm(c){return String(c==null?"":c).replace(/\D/g,"").replace(/^0+/,"")}
+function setList(a){list=a;map={};a.forEach(function(r){map[norm(r[1])]=r});$("nl").textContent=a.length}
+function load(){try{recs=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){recs=[]}
+ try{$("agent").value=localStorage.getItem(KAG)||""}catch(e){}
+ var l=null;try{l=JSON.parse(localStorage.getItem(KLST)||"null")}catch(e){}
+ setList(l&&l.length?l:DEFAULT_LIST)}
+function store(){try{localStorage.setItem(KEY,JSON.stringify(recs))}catch(e){say("msg","تعذّر الحفظ على هذا الجهاز. صدّر الملف الآن.","err")}}
+function say(id,t,c){var e=$(id);e.textContent=t;e.className="msg"+(c?" "+c:"")}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function mapUrl(la,lo){return"https://www.google.com/maps?q="+la+","+lo}
+function valid(la,lo){return isFinite(la)&&isFinite(lo)&&la>=18&&la<=38&&lo>=-9&&lo<=12}
+
+$("code").oninput=function(){
+ var v=$("code").value.replace(/\D/g,"").slice(0,10);$("code").value=v;
+ var f=$("found");cur=null;
+ if(!v){f.className="found";f.innerHTML="";return}
+ var r=map[norm(v)];
+ if(r){cur=r;f.className="found ok";f.innerHTML="<b>"+esc(r[2])+" "+esc(r[3])+"</b>"+(r[0]?" — مركز "+esc(r[0]):"")}
+ else if(v.length>=10){f.className="found no";f.textContent="الرمز غير موجود في القائمة."}
+ else{f.className="found";f.innerHTML=""}
+};
+$("place").oninput=function(){placeDirty=true;$("placeHint").textContent=""};
+
+function showPos(){
+ if(!pos){$("coords").textContent="—";$("acc").textContent="";$("mapLink").innerHTML="";return}
+ $("coords").textContent=pos.lat.toFixed(6)+" , "+pos.lng.toFixed(6);
+ var a=$("acc");
+ if(pos.acc==null){a.textContent="إدخال يدوي";a.className="acc"}
+ else{a.textContent="دقة الموقع: ±"+Math.round(pos.acc)+" م"+(pos.acc>30?" — الدقة ضعيفة، اقترب من الباب وأعد التحديد":"");a.className="acc"+(pos.acc>30?" bad":"")}
+ $("mapLink").innerHTML='<a href="'+mapUrl(pos.lat,pos.lng)+'" target="_blank" rel="noopener">فتح النقطة في الخريطة للتحقق</a>';
+}
+
+function suggest(la,lo){
+ if(placeDirty&&$("place").value.trim())return;
+ var ctl=window.AbortController?new AbortController():null,t=setTimeout(function(){ctl&&ctl.abort()},8000);
+ $("placeHint").textContent="جارٍ جلب اسم المكان…";
+ fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=ar&lat="+la+"&lon="+lo,ctl?{signal:ctl.signal}:{})
+ .then(function(r){return r.json()}).then(function(j){
+  clearTimeout(t);var a=j.address||{},p=[j.name,a.road,a.suburb||a.neighbourhood||a.quarter,a.city||a.town||a.village||a.municipality];
+  var o=[];p.forEach(function(x){if(x&&o.indexOf(x)<0)o.push(x)});
+  if(o.length&&!(placeDirty&&$("place").value.trim())){$("place").value=o.join("، ");placeDirty=false;$("placeHint").textContent="اسم مقترح من الخريطة وقد لا يطابق العيادة. صحّحه إذا لزم."}
+  else $("placeHint").textContent="لم يُعثر على اسم. اكتبه يدوياً."
+ }).catch(function(){clearTimeout(t);$("placeHint").textContent="تعذّر جلب الاسم (لا إنترنت). اكتبه يدوياً."})
+}
+
+$("btnGps").onclick=function(){
+ if(!navigator.geolocation){say("msg","هذا المتصفح لا يدعم تحديد الموقع. أدخل الإحداثيات يدوياً.","err");return}
+ var b=$("btnGps");b.disabled=true;b.textContent="جارٍ تحديد الموقع…";say("msg","");
+ navigator.geolocation.getCurrentPosition(function(p){
+  pos={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};
+  b.disabled=false;b.textContent="📍 إعادة تحديد الموقع";showPos();
+  if(!valid(pos.lat,pos.lng))say("msg","الموقع خارج حدود الجزائر. تحقق من الإحداثيات.","err");else suggest(pos.lat,pos.lng)
+ },function(e){
+  b.disabled=false;b.textContent="📍 تحديد موقعي الآن";
+  say("msg",e.code===1?"رُفض إذن الموقع. فعّله من إعدادات المتصفح للموقع، أو أدخل الإحداثيات يدوياً.":"تعذّر تحديد الموقع. اخرج إلى مكان مفتوح وأعد المحاولة.","err")
+ },{enableHighAccuracy:true,timeout:25000,maximumAge:0});
+};
+
+$("btnManual").onclick=function(){
+ var la=parseFloat(($("latM").value||"").replace(",",".")),lo=parseFloat(($("lngM").value||"").replace(",","."));
+ if(!valid(la,lo)){say("msg","إحداثيات غير صالحة. العرض نحو 36 والطول نحو 6 في شمال الجزائر.","err");return}
+ pos={lat:la,lng:lo,acc:null};showPos();say("msg","");suggest(la,lo)
+};
+
+$("btnSave").onclick=function(){
+ var code=$("code").value.trim(),na=$("nomAr").value.trim(),pa=$("prenomAr").value.trim();
+ if(!code){say("msg","أدخل رمز الطبيب.","err");return}
+ if(!na||!pa){say("msg","أدخل الاسم واللقب بالعربية.","err");return}
+ if(!pos){say("msg","حدّد الموقع أولاً.","err");return}
+ if(!valid(pos.lat,pos.lng)){say("msg","الإحداثيات خارج حدود الجزائر.","err");return}
+ if(!cur&&!confirm("الرمز غير موجود في القائمة. تسجيله على أي حال؟"))return;
+ if(recs.some(function(r){return r.code===code})&&!confirm("هذا الرمز مسجّل من قبل. هل تريد تسجيله مرة أخرى؟"))return;
+ var d=new Date();
+ recs.unshift({centre:cur?cur[0]:"",code:code,nom:cur?cur[2]:"",prenom:cur?cur[3]:"",nomAr:na,prenomAr:pa,place:$("place").value.trim(),
+  lat:+pos.lat.toFixed(6),lng:+pos.lng.toFixed(6),acc:pos.acc==null?"":Math.round(pos.acc),
+  date:d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()),time:pad(d.getHours())+":"+pad(d.getMinutes()),ts:d.getTime()});
+ store();render();
+ ["code","nomAr","prenomAr","place"].forEach(function(i){$(i).value=""});
+ $("found").className="found";$("found").innerHTML="";cur=null;placeDirty=false;$("placeHint").textContent="";
+ pos=null;showPos();$("btnGps").textContent="📍 تحديد موقعي الآن";
+ say("msg","تم تسجيل العملية.","good");$("code").focus()
+};
+
+$("agent").oninput=function(){try{localStorage.setItem(KAG,$("agent").value)}catch(e){}};
+
+function render(){
+ $("n").textContent=recs.length;
+ var h="";
+ recs.forEach(function(r,i){
+  h+='<div class="rec"><b>'+esc(r.nomAr)+" "+esc(r.prenomAr)+"</b>"+(r.nom?" ("+esc(r.nom)+" "+esc(r.prenom)+")":"")+" — "+esc(r.code)+
+   (r.place?"<br>"+esc(r.place):"")+
+   "<small>"+r.lat+" , "+r.lng+(r.acc!==""?" (±"+r.acc+" م)":"")+" — "+r.date+" "+r.time+"</small>"+
+   '<div class="acts"><a href="'+mapUrl(r.lat,r.lng)+'" target="_blank" rel="noopener">الخريطة</a>'+
+   '<button type="button" class="danger" data-i="'+i+'">حذف</button></div></div>'});
+ $("list").innerHTML=h||'<p class="empty">لا توجد تسجيلات بعد. سجّل أول عملية من الأعلى.</p>';
+}
+$("list").onclick=function(e){
+ var i=e.target.getAttribute&&e.target.getAttribute("data-i");
+ if(i!==null&&i!==undefined&&confirm("حذف هذا التسجيل؟")){recs.splice(+i,1);store();render()}
+};
+
+$("btnExport").onclick=function(){
+ if(!recs.length){say("exMsg","لا توجد تسجيلات للتصدير.","err");return}
+ var ag=$("agent").value.trim(),d=new Date(),fn="medecins_"+d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+ var head=["#","التاريخ","الوقت","centre","code ps","nom","prenom","الاسم","اللقب","اسم المكان","خط العرض","خط الطول","الدقة (م)","رابط الخريطة","المسجِّل"];
+ var rows=recs.slice().reverse().map(function(r,i){return[i+1,r.date,r.time,r.centre,r.code,r.nom,r.prenom,r.nomAr,r.prenomAr,r.place,r.lat,r.lng,r.acc,mapUrl(r.lat,r.lng),ag]});
+ if(window.XLSX){
+  try{
+   var ws=XLSX.utils.aoa_to_sheet([head].concat(rows));
+   ws["!cols"]=[5,11,7,9,13,16,16,14,14,28,11,11,9,40,16].map(function(w){return{wch:w}});
+   var wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};
+   XLSX.utils.book_append_sheet(wb,ws,"Medecins");XLSX.writeFile(wb,fn+".xlsx");
+   say("exMsg","تم تنزيل ملف Excel: "+fn+".xlsx","good");return
+  }catch(e){}
+ }
+ var csv="\ufeff"+[head].concat(rows).map(function(r){return r.map(function(c){return'"'+String(c==null?"":c).replace(/"/g,'""')+'"'}).join(",")}).join("\r\n");
+ var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download=fn+".csv";document.body.appendChild(a);a.click();a.remove();
+ say("exMsg","تعذّر تحميل مكتبة Excel بلا إنترنت، فنُزّل ملف CSV يفتحه Excel مباشرة.","good")
+};
+
+$("btnClear").onclick=function(){
+ if(!recs.length)return;
+ if(confirm("سيُحذف كل شيء من هذا الجهاز. هل صدّرت الملف وأرسلته؟")&&confirm("تأكيد أخير: مسح "+recs.length+" تسجيل؟")){recs=[];store();render();say("exMsg","تم المسح.","good")}
+};
+
+$("file").onchange=function(){
+ var f=this.files[0];if(!f)return;
+ var rd=new FileReader();
+ function done(rows){
+  var hd=(rows[0]||[]).map(function(x){return String(x||"").trim().toLowerCase()});
+  var ic=hd.indexOf("centre"),ip=hd.indexOf("code ps"),inn=hd.indexOf("nom"),ipr=hd.indexOf("prenom");
+  if(ip<0||inn<0||ipr<0){say("lMsg","الأعمدة المطلوبة: centre، code ps، nom، prenom.","err");return}
+  var out=[];rows.slice(1).forEach(function(r){var c=String(r[ip]==null?"":r[ip]).replace(/\D/g,"");if(c)out.push([ic>=0?String(r[ic]==null?"":r[ic]):"",c,String(r[inn]||"").trim(),String(r[ipr]||"").trim()])});
+  if(!out.length){say("lMsg","لا توجد أسطر صالحة في الملف.","err");return}
+  setList(out);try{localStorage.setItem(KLST,JSON.stringify(out))}catch(e){}
+  say("lMsg","تم تحميل "+out.length+" طبيباً.","good");$("code").oninput()
+ }
+ if(/\.csv$/i.test(f.name)){
+  rd.onload=function(){var L=String(rd.result).replace(/^\ufeff/,"").split(/\r?\n/).filter(Boolean),sep=L[0].indexOf(";")>=0?";":",";done(L.map(function(l){return l.split(sep).map(function(x){return x.replace(/^"|"$/g,"")})}))};rd.readAsText(f)
+ }else if(window.XLSX){
+  rd.onload=function(){try{var wb=XLSX.read(rd.result,{type:"array"});done(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true}))}catch(e){say("lMsg","تعذّرت قراءة الملف.","err")}};rd.readAsArrayBuffer(f)
+ }else say("lMsg","قراءة Excel تحتاج إنترنت. احفظ الملف بصيغة CSV أو اتصل بالإنترنت.","err")
+};
+load();render();showPos();
+})();
+</script>
+</body>
+</html>
