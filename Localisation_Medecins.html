@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0874b9"><title>تحديد مواقع الأطباء</title>
+<style>
+:root{--blue:#0874b9;--blue2:#075e99;--bg:#f8f4fa;--ink:#252832;--muted:#68717d;--line:#d9e0e7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,"Noto Sans Arabic",sans-serif;color:var(--ink)}
+header{background:var(--blue);color:#fff;padding:18px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 7px #0002}
+header h1{font-size:22px;font-weight:600;margin:0}header small{font-size:12px;opacity:.9}
+main{max-width:760px;margin:18px auto;padding:0 13px 35px}
+.card{background:#fff;border:1px solid #e8e8ec;border-radius:18px;padding:17px;margin:13px 0;box-shadow:0 3px 14px #2530440b}
+h2{font-size:18px;color:var(--blue);margin:0 0 14px}
+label{display:block;font-weight:600;margin:12px 0 7px}
+input,button{font:inherit}input[type=text],input[type=search]{width:100%;border:1px solid #cbd2da;border-radius:12px;padding:14px;font-size:17px;background:#fff;color:#222}
+input:focus{outline:2px solid #8cc7ed;border-color:var(--blue)}
+button{border:0;border-radius:12px;padding:14px 16px;font-size:16px;font-weight:700;cursor:pointer}
+.primary{background:var(--blue);color:#fff;width:100%;margin-top:12px}.outline{background:#fff;color:var(--blue);border:1.5px solid var(--blue);width:100%;margin-top:9px}.soft{background:#eaf5fc;color:var(--blue)}
+.row{display:flex;gap:9px}.row>*{flex:1}.hint{font-size:13px;color:var(--muted);line-height:1.7}.doctor{background:#f7fbff;border:1px solid #d8eaf7;border-radius:13px;padding:13px;margin-top:10px;display:none}
+.doctor b{color:#333}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.value{font-weight:700;direction:ltr;text-align:right;overflow-wrap:anywhere}
+.status{padding:10px;border-radius:10px;background:#f1f5f8;font-size:14px;margin-top:10px;line-height:1.6}
+.good{background:#eaf8ef;color:#176b37}.warn{background:#fff5e5;color:#8a5700}
+.listitem{border-bottom:1px solid var(--line);padding:11px 0;font-size:14px;line-height:1.7}.listitem:last-child{border:0}
+.smallbtn{padding:8px 10px;font-size:13px;width:auto;margin:4px}
+.file{display:none}.filelabel{display:block;text-align:center;background:#eaf5fc;border:1.5px dashed var(--blue);color:var(--blue);padding:15px;border-radius:12px;font-weight:700;cursor:pointer}
+footer{text-align:center;color:#7c8490;font-size:12px;padding:10px}
+@media(max-width:430px){header h1{font-size:19px}.grid{grid-template-columns:1fr}.row{flex-direction:column}}
+</style></head>
+<body>
+<header><div><h1>تحديد مواقع الأطباء</h1><small>البحث والتسجيل الجغرافي</small></div><div style="font-size:26px">⌖</div></header>
+<main>
+<section class="card">
+<h2>1. قاعدة بيانات الأطباء</h2>
+<div class="hint" id="dbInfo">البيانات التجريبية محمّلة داخل التطبيق.</div>
+<label class="filelabel" for="excelFile">📥 تحميل ملف Excel جديد (.xlsx / .xls / .csv)</label>
+<input class="file" id="excelFile" type="file" accept=".xlsx,.xls,.csv">
+<div class="row"><button class="outline" id="exportBtn">تصدير سجل التسجيلات CSV</button><button class="outline" id="clearBtn">مسح السجل</button></div>
+<div class="hint">أعمدة الملف المطلوبة: centre، code ps، nom، prenom. يمكنك تحميل ملف جديد في أي وقت.</div>
+<div class="status" id="importStatus">عدد الأطباء: <b id="count"></b></div>
+</section>
+<section class="card">
+<h2>2. البحث عن الطبيب</h2>
+<label for="codeSearch">رمز الطبيب (CODE PS)</label>
+
+<div class="row"><input id="codeSearch" type="search" inputmode="numeric" placeholder="أدخل رمز الطبيب"><button class="soft" id="searchBtn" style="flex:0 0 112px">بحث</button></div>
+<div class="doctor" id="doctorBox">
+<div class="grid"><div>رمز المركز<br><b id="dCentre"></b></div><div>رمز الطبيب<br><b id="dCode"></b></div><div>اللقب (باللاتينية)<br><b id="dNom"></b></div><div>الاسم (باللاتينية)<br><b id="dPrenom"></b></div></div>
+</div>
+<div class="status" id="searchStatus">ابحث برمز الطبيب لإظهار بياناته.</div>
+</section>
+<section class="card">
+<h2>3. إدخال الاسم واللقب بالعربية</h2>
+<label for="arabicNom">اللقب بالعربية</label><input id="arabicNom" type="text" placeholder="أدخل اللقب بالعربية">
+<label for="arabicPrenom">الاسم بالعربية</label><input id="arabicPrenom" type="text" placeholder="أدخل الاسم بالعربية">
+<h2 style="margin-top:22px">4. تحديد الموقع الجغرافي</h2>
+<button class="primary" id="gpsBtn">📍 تحديد موقعي واستخراج العنوان</button>
+<div class="status" id="gpsStatus">لم يتم تحديد الموقع بعد. اسمح للمتصفح باستخدام GPS عند الطلب.</div>
+<div class="grid" style="margin-top:12px"><div>خط العرض (Latitude)<div class="value" id="lat">—</div></div><div>خط الطول (Longitude)<div class="value" id="lon">—</div></div></div>
+<label>اسم المكان / العنوان</label><div class="status" id="place">—</div>
+<button class="primary" id="saveBtn">💾 تسجيل العملية</button>
+</section>
+<section class="card">
+<h2>5. سجل العمليات المسجلة</h2>
+<div class="hint">تُحفظ التسجيلات على نفس الهاتف أو المتصفح.</div>
+<div id="logList" class="hint" style="margin-top:8px">لا توجد تسجيلات بعد.</div>
+</section>
+</main><footer>تطبيق تجريبي — يتطلب الإنترنت لاستخراج اسم المكان من الإحداثيات</footer>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+const starter=[{"centre": "14305", "code": "4302002181", "nom": "AMARA", "prenom": "YOUCEF"}, {"centre": "14305", "code": "4302059061", "nom": "BEGHOUL", "prenom": "MOURAD"}, {"centre": "14305", "code": "4302022179", "nom": "BOUKROUH", "prenom": "FERHAT"}, {"centre": "14305", "code": "4302022674", "nom": "BOULEKESSAIR", "prenom": "ABDELAZIZ"}, {"centre": "14305", "code": "4302059954", "nom": "BOUTEBAKH", "prenom": "AHMED"}, {"centre": "14305", "code": "4302060080", "nom": "BOUTEBAKH", "prenom": "SAIDA"}, {"centre": "14305", "code": "4302060476", "nom": "HAMIDECHE", "prenom": "AZZEDDINE"}, {"centre": "14305", "code": "4302060377", "nom": "KEDJOUNE", "prenom": "AMAR"}, {"centre": "14305", "code": "4302110974", "nom": "NAMOUS", "prenom": "BACHIR"}, {"centre": "14309", "code": "4302112178", "nom": "BARKAT", "prenom": "AWATAF"}, {"centre": "14309", "code": "4302006074", "nom": "BEKKOUCHE", "prenom": "ELHADI"}, {"centre": "14309", "code": "4302090671", "nom": "BOUCHAREB", "prenom": "RIDA"}, {"centre": "14309", "code": "4302111774", "nom": "BOUKRIA", "prenom": "DRISSE"}, {"centre": "14309", "code": "4302112277", "nom": "SABOUNI", "prenom": "HIND"}, {"centre": "14313", "code": "4302112474", "nom": "BELMEHBOUL", "prenom": "SALIM"}, {"centre": "14313", "code": "4302111180", "nom": "BOULFOUS", "prenom": "NASRRINE"}, {"centre": "14313", "code": "4302024175", "nom": "BOUSBIA", "prenom": "CHABANE"}, {"centre": "14313", "code": "4302025965", "nom": "BOUZIDI", "prenom": "NOUI"}, {"centre": "14313", "code": "4302038562", "nom": "KERDOUNE", "prenom": "MOUNIR"}, {"centre": "14313", "code": "4302055863", "nom": "ZEMIECHE", "prenom": "ABBOUD"}];
+let doctors=starter, selected=null, gps=null, logs=[];
+try{logs=JSON.parse(localStorage.getItem('doctorLocationLogs')||'[]')}catch(e){}
+const $=id=>document.getElementById(id);
+function refreshCount(){ $('count').textContent=doctors.length; $('dbInfo').textContent='قاعدة البيانات الحالية: '+doctors.length+' طبيباً.'; }
+function norm(s){return String(s??'').trim().toLowerCase().replace(/[\s_-]+/g,'')}
+function findVal(row,keys){const k=Object.keys(row);for(const wanted of keys){const found=k.find(x=>norm(x)===norm(wanted));if(found!==undefined)return row[found]}return ''}
+function search(){
+ const q=$('codeSearch').value.trim(); const d=doctors.find(x=>String(x.code).trim()===q);
+ selected=d||null; $('doctorBox').style.display=d?'block':'none';
+ if(!d){$('searchStatus').className='status warn';$('searchStatus').textContent='لم يتم العثور على طبيب بهذا الرمز.';return}
+ $('dCentre').textContent=d.centre||'—';$('dCode').textContent=d.code;$('dNom').textContent=d.nom||'';$('dPrenom').textContent=d.prenom||'';
+ $('searchStatus').className='status good';$('searchStatus').textContent='تم العثور على الطبيب. أكمل الاسم واللقب بالعربية ثم حدد الموقع.';
+}
+$('searchBtn').onclick=search;$('codeSearch').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
+$('excelFile').addEventListener('change',async e=>{
+ const f=e.target.files[0];if(!f)return;
+ if(!window.XLSX){$('importStatus').textContent='تعذر تحميل قارئ Excel. تحقق من الإنترنت ثم أعد المحاولة.';return}
+ try{
+ const buf=await f.arrayBuffer();const wb=XLSX.read(buf,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const data=XLSX.utils.sheet_to_json(ws,{defval:''});
+ const mapped=data.map(r=>({centre:String(findVal(r,['centre','مركز','رمز المركز'])),code:String(findVal(r,['code ps','codeps','رمز الطبيب','code'])),nom:String(findVal(r,['nom','اللقب'])),prenom:String(findVal(r,['prenom','prénom','الاسم']))})).filter(x=>x.code);
+ if(!mapped.length)throw new Error('لم أجد بيانات. تحقق من عناوين الأعمدة: centre, code ps, nom, prenom');
+ doctors=mapped;selected=null;$('doctorBox').style.display='none';refreshCount();
+ $('importStatus').className='status good';$('importStatus').textContent='تم تحميل '+mapped.length+' طبيباً من الملف: '+f.name;
+ }catch(err){$('importStatus').className='status warn';$('importStatus').textContent='تعذر قراءة الملف: '+err.message}
+ e.target.value='';
+});
+$('gpsBtn').onclick=()=>{
+ if(!navigator.geolocation){$('gpsStatus').textContent='هذا المتصفح لا يدعم تحديد الموقع.';return}
+ $('gpsStatus').textContent='جارٍ تحديد الموقع... تأكد من تفعيل GPS والسماح بإذن الموقع.';
+ navigator.geolocation.getCurrentPosition(async pos=>{
+ gps={lat:pos.coords.latitude,lon:pos.coords.longitude};
+ $('lat').textContent=gps.lat.toFixed(6);$('lon').textContent=gps.lon.toFixed(6);
+ $('gpsStatus').className='status good';$('gpsStatus').textContent='تم تحديد الإحداثيات بنجاح.';
+ $('place').textContent='جارٍ البحث عن اسم المكان...';
+ try{
+ const url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+gps.lat+'&lon='+gps.lon+'&accept-language=ar';
+ const res=await fetch(url,{headers:{'Accept':'application/json'}});const j=await res.json();
+ $('place').textContent=j.display_name||'لم يتوفر عنوان وصفي لهذا الموقع. الإحداثيات محفوظة.';
+ }catch(e){$('place').textContent='تعذر استخراج اسم المكان بسبب الاتصال. الإحداثيات محفوظة.'}
+ },err=>{$('gpsStatus').className='status warn';$('gpsStatus').textContent='تعذر تحديد الموقع: '+({1:'لم تسمح بإذن الموقع.',2:'إشارة الموقع غير متاحة.',3:'انتهت مهلة تحديد الموقع.'}[err.code]||err.message)}, {enableHighAccuracy:true,timeout:20000,maximumAge:0});
+};
+function renderLogs(){
+ if(!logs.length){$('logList').textContent='لا توجد تسجيلات بعد.';return}
+ $('logList').innerHTML=logs.slice().reverse().map(x=>`<div class="listitem"><b>${esc(x.code)} — ${esc(x.nomAr)} ${esc(x.prenomAr)}</b><br>${esc(x.place)}<br><span dir="ltr">${x.lat}, ${x.lon}</span><br><span>${esc(x.date)}</span></div>`).join('');
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('saveBtn').onclick=()=>{
+ if(!selected){alert('ابحث عن الطبيب أولاً.');return}
+ if(!$('arabicNom').value.trim()||!$('arabicPrenom').value.trim()){alert('أدخل الاسم واللقب بالعربية.');return}
+ if(!gps){alert('حدد الموقع الجغرافي أولاً.');return}
+ if(logs.some(x=>x.code===selected.code)){if(!confirm('هذا الطبيب مسجل من قبل. هل تريد تسجيل زيارة جديدة؟'))return}
+ const now=new Date();
+ logs.push({centre:selected.centre,code:selected.code,nom:selected.nom,prenom:selected.prenom,nomAr:$('arabicNom').value.trim(),prenomAr:$('arabicPrenom').value.trim(),lat:gps.lat.toFixed(6),lon:gps.lon.toFixed(6),place:$('place').textContent,date:now.toLocaleString('fr-FR')});
+ localStorage.setItem('doctorLocationLogs',JSON.stringify(logs));renderLogs();alert('تم تسجيل العملية بنجاح.');
+};
+$('clearBtn').onclick=()=>{if(confirm('هل تريد مسح جميع التسجيلات المحفوظة على هذا الجهاز؟')){logs=[];localStorage.removeItem('doctorLocationLogs');renderLogs()}};
+$('exportBtn').onclick=()=>{
+ if(!logs.length){alert('لا توجد تسجيلات للتصدير.');return}
+ const cols=['centre','code','nom','prenom','nomAr','prenomAr','lat','lon','place','date'];
+ const csv='\uFEFF'+[cols.join(';'),...logs.map(o=>cols.map(k=>'"'+String(o[k]??'').replace(/"/g,'""')+'"').join(';'))].join('\r\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='Enregistrements_Medecins.csv';a.click();URL.revokeObjectURL(a.href);
+};
+refreshCount();renderLogs();
+</script></body></html>
