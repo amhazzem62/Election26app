@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>إحداثيات المساجد</title>
+<style>
+:root{--ink:#1b2e26;--green:#14694a;--green2:#0e5139;--paper:#f3f6f2;--card:#fff;--line:#d3ddd6;--amber:#a86a00;--red:#a62b2b;--muted:#5b6e65}
+@media (prefers-color-scheme:dark){:root{--ink:#e5efe9;--green:#45b385;--green2:#2f9b70;--paper:#0e1a15;--card:#16251e;--line:#2b4136;--amber:#e0a23a;--red:#ef8a8a;--muted:#9cb4a8}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Segoe UI",Tahoma,"Noto Naskh Arabic",Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+header{background:var(--green2);color:#fff;padding:16px}header h1{margin:0;font-size:20px}header p{margin:2px 0 0;font-size:13px;opacity:.85}
+main{max-width:620px;margin:0 auto;padding:14px 14px 40px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 10px}
+label{display:block;font-size:14px;font-weight:600;margin:10px 0 4px}
+input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:16px}
+input:focus,button:focus-visible{outline:2px solid var(--green);outline-offset:1px}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:13px 14px;cursor:pointer;width:100%;margin-top:10px;background:var(--green);color:#fff}
+button.sec{background:transparent;color:var(--green);border:1px solid var(--green)}
+button.danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+button:disabled{opacity:.5}
+.coords{font-family:ui-monospace,Menlo,Consolas,monospace;direction:ltr;text-align:center;font-size:17px;margin:8px 0 2px}
+.acc{font-size:13px;text-align:center;color:var(--muted)}.acc.bad{color:var(--amber);font-weight:700}
+.msg{font-size:14px;margin-top:8px;min-height:20px}.msg.err{color:var(--red)}.msg.good{color:var(--green)}
+.qrbox{display:flex;justify-content:center;margin:12px 0 0}.qrbox>div{background:#fff;padding:10px;border-radius:10px;line-height:0}
+.tiles{display:flex;gap:8px}.tile{flex:1;text-align:center;border:1px solid var(--line);border-radius:12px;padding:10px 4px;background:var(--paper)}
+.tile b{display:block;font-size:26px;line-height:1.2;color:var(--green)}.tile span{font-size:13px;color:var(--muted)}
+.rec{border-top:1px solid var(--line);padding:10px 0;font-size:14px}.rec:first-of-type{border-top:0}.rec b{font-size:15px}
+.rec small{color:var(--muted);display:block;direction:ltr;text-align:right}
+.acts{display:flex;gap:8px;margin-top:6px}.acts button,.acts a{width:auto;margin:0;padding:6px 12px;font-size:13px;border-radius:8px}
+.acts a{color:var(--green);font-weight:600;align-self:center}
+.empty{color:var(--muted);font-size:14px}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:9}
+#ov.on{display:flex}#ov .card{background:var(--card);border-radius:16px;padding:16px;max-width:360px;width:100%;text-align:center}
+</style>
+</head>
+<body>
+<header><h1>إحداثيات المساجد</h1><p>أدخل اسم المسجد، والتطبيق يحدّد الموقع وينشئ رمز QR</p></header>
+<main>
+
+<section>
+<h2>تسجيل مسجد</h2>
+<label for="name">اسم المسجد</label>
+<input id="name" autocomplete="off" placeholder="مثال: مسجد عمر بن الخطاب">
+<button type="button" id="btnGo">📍 تحديد الموقع وإنشاء QR</button>
+<div class="coords" id="coords">—</div>
+<div class="acc" id="acc"></div>
+<label for="place">اسم المكان (يُقترح تلقائياً، عدّله إن لزم)</label>
+<input id="place" autocomplete="off">
+<div class="acc" id="placeHint"></div>
+<div class="qrbox" id="qrWrap" style="display:none"><div id="qr"></div></div>
+<details style="margin-top:10px"><summary style="cursor:pointer;font-size:14px;color:var(--muted)">إدخال الإحداثيات يدوياً</summary>
+<label for="latM">خط العرض</label><input id="latM" inputmode="decimal" dir="ltr" placeholder="36.4521">
+<label for="lngM">خط الطول</label><input id="lngM" inputmode="decimal" dir="ltr" placeholder="6.2630">
+<button type="button" class="sec" id="btnManual">استعمال هذه الإحداثيات</button></details>
+<div class="msg" id="msg" role="status"></div>
+<button type="button" id="btnSave">💾 تسجيل المسجد</button>
+</section>
+
+<section>
+<h2>الإحصائيات</h2>
+<div class="tiles"><div class="tile"><b id="sAll">0</b><span>مساجد مسجَّلة</span></div><div class="tile"><b id="sToday">0</b><span>سُجّلت اليوم</span></div></div>
+</section>
+
+<section>
+<h2>المساجد المسجَّلة</h2>
+<label for="agent">اسم المسجِّل (يظهر في الملف)</label><input id="agent" autocomplete="name">
+<button type="button" id="btnExport">📤 تصدير ملف Excel</button>
+<div class="msg" id="exMsg" role="status"></div>
+<div id="list"></div>
+<button type="button" class="danger" id="btnClear">مسح كل التسجيلات بعد الإرسال</button>
+</section>
+</main>
+
+<div id="ov"><div class="card"><div class="qrbox" style="margin:0"><div id="qrBig"></div></div>
+<h2 id="ovName" style="margin-top:10px"></h2><div class="acc" id="ovCo" style="direction:ltr"></div>
+<button type="button" id="ovDl">⬇ تنزيل صورة QR</button><button type="button" class="sec" id="ovClose">إغلاق</button></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var KEY="mos_gps_records_v1",KAG="mos_gps_agent_v1",recs=[],pos=null,dirty=false;
+function pad(n){return n<10?"0"+n:""+n}
+function say(id,t,c){var e=$(id);e.textContent=t;e.className="msg"+(c?" "+c:"")}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function mapUrl(a,b){return"https://www.google.com/maps?q="+a+","+b}
+function valid(a,b){return isFinite(a)&&isFinite(b)&&a>=18&&a<=38&&b>=-9&&b<=12}
+function load(){try{recs=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){recs=[]}try{$("agent").value=localStorage.getItem(KAG)||""}catch(e){}}
+function store(){try{localStorage.setItem(KEY,JSON.stringify(recs))}catch(e){say("msg","تعذّر الحفظ على الجهاز. صدّر الملف الآن.","err")}}
+function today(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+
+function makeQR(el,text,size){
+ el.innerHTML="";
+ if(!window.QRCode){el.style.lineHeight="1.6";el.textContent="تعذّر تحميل مكتبة QR. يلزم اتصال بالإنترنت.";return false}
+ new QRCode(el,{text:text,width:size,height:size,correctLevel:QRCode.CorrectLevel.M});return true}
+
+function showPos(){
+ if(!pos){$("coords").textContent="—";$("acc").textContent="";$("qrWrap").style.display="none";return}
+ $("coords").textContent=pos.lat.toFixed(6)+" , "+pos.lng.toFixed(6);
+ var a=$("acc");
+ if(pos.acc==null){a.textContent="إدخال يدوي";a.className="acc"}
+ else{a.textContent="دقة الموقع: ±"+Math.round(pos.acc)+" م"+(pos.acc>30?" — الدقة ضعيفة، اقترب من المدخل وأعد التحديد":"");a.className="acc"+(pos.acc>30?" bad":"")}
+ $("qrWrap").style.display="flex";makeQR($("qr"),mapUrl(pos.lat.toFixed(6),pos.lng.toFixed(6)),180)
+}
+
+function suggest(la,lo){
+ if(dirty&&$("place").value.trim())return;
+ var ctl=window.AbortController?new AbortController():null,t=setTimeout(function(){ctl&&ctl.abort()},8000);
+ $("placeHint").textContent="جارٍ جلب اسم المكان…";
+ fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=ar&lat="+la+"&lon="+lo,ctl?{signal:ctl.signal}:{})
+ .then(function(r){return r.json()}).then(function(j){
+  clearTimeout(t);var a=j.address||{},p=[a.road,a.suburb||a.neighbourhood||a.quarter,a.city||a.town||a.village||a.municipality],o=[];
+  p.forEach(function(x){if(x&&o.indexOf(x)<0)o.push(x)});
+  if(o.length&&!(dirty&&$("place").value.trim())){$("place").value=o.join("، ");dirty=false;$("placeHint").textContent="اسم مقترح من الخريطة وقد لا يكون دقيقاً. صحّحه إذا لزم."}
+  else $("placeHint").textContent="لم يُعثر على اسم. اكتبه يدوياً."
+ }).catch(function(){clearTimeout(t);$("placeHint").textContent="تعذّر جلب الاسم (لا إنترنت). اكتبه يدوياً."})
+}
+$("place").oninput=function(){dirty=true;$("placeHint").textContent=""};
+
+$("btnGo").onclick=function(){
+ if(!$("name").value.trim()){say("msg","أدخل اسم المسجد أولاً.","err");$("name").focus();return}
+ if(!navigator.geolocation){say("msg","المتصفح لا يدعم تحديد الموقع. أدخل الإحداثيات يدوياً.","err");return}
+ var b=$("btnGo");b.disabled=true;b.textContent="جارٍ تحديد الموقع…";say("msg","");
+ navigator.geolocation.getCurrentPosition(function(p){
+  pos={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};
+  b.disabled=false;b.textContent="📍 إعادة تحديد الموقع";showPos();
+  if(!valid(pos.lat,pos.lng))say("msg","الموقع خارج حدود الجزائر. تحقق من الإحداثيات.","err");else suggest(pos.lat,pos.lng)
+ },function(e){
+  b.disabled=false;b.textContent="📍 تحديد الموقع وإنشاء QR";
+  say("msg",e.code===1?"رُفض إذن الموقع. افتح الرابط في Chrome وفعّل الموقع، أو أدخل الإحداثيات يدوياً.":"تعذّر تحديد الموقع. اخرج إلى مكان مفتوح وأعد المحاولة.","err")
+ },{enableHighAccuracy:true,timeout:25000,maximumAge:0})
+};
+$("btnManual").onclick=function(){
+ var a=parseFloat(($("latM").value||"").replace(",",".")),b=parseFloat(($("lngM").value||"").replace(",","."));
+ if(!valid(a,b)){say("msg","إحداثيات غير صالحة. العرض نحو 36 والطول نحو 6 في شمال الجزائر.","err");return}
+ pos={lat:a,lng:b,acc:null};showPos();say("msg","");suggest(a,b)
+};
+
+$("btnSave").onclick=function(){
+ var n=$("name").value.trim();
+ if(!n){say("msg","أدخل اسم المسجد.","err");return}
+ if(!pos){say("msg","حدّد الموقع أولاً.","err");return}
+ if(!valid(pos.lat,pos.lng)){say("msg","الإحداثيات خارج حدود الجزائر.","err");return}
+ if(recs.some(function(r){return r.name===n})&&!confirm("هذا الاسم مسجّل من قبل. تسجيله مرة أخرى؟"))return;
+ var d=new Date();
+ recs.unshift({name:n,place:$("place").value.trim(),lat:+pos.lat.toFixed(6),lng:+pos.lng.toFixed(6),acc:pos.acc==null?"":Math.round(pos.acc),date:today(),time:pad(d.getHours())+":"+pad(d.getMinutes())});
+ store();render();
+ $("name").value="";$("place").value="";dirty=false;$("placeHint").textContent="";pos=null;showPos();$("btnGo").textContent="📍 تحديد الموقع وإنشاء QR";
+ say("msg","تم تسجيل المسجد.","good");$("name").focus()
+};
+$("agent").oninput=function(){try{localStorage.setItem(KAG,$("agent").value)}catch(e){}};
+
+function render(){
+ $("sAll").textContent=recs.length;$("sToday").textContent=recs.filter(function(r){return r.date===today()}).length;
+ var h="";
+ recs.forEach(function(r,i){
+  h+='<div class="rec"><b>'+esc(r.name)+"</b>"+(r.place?"<br>"+esc(r.place):"")+"<small>"+r.lat+" , "+r.lng+(r.acc!==""?" (±"+r.acc+" م)":"")+" — "+r.date+" "+r.time+"</small>"+
+  '<div class="acts"><button type="button" class="sec" data-q="'+i+'">QR</button><a href="'+mapUrl(r.lat,r.lng)+'" target="_blank" rel="noopener">الخريطة</a><button type="button" class="danger" data-d="'+i+'">حذف</button></div></div>'});
+ $("list").innerHTML=h||'<p class="empty">لا توجد تسجيلات بعد.</p>'
+}
+var cur=null;
+$("list").onclick=function(e){
+ var q=e.target.getAttribute("data-q"),d=e.target.getAttribute("data-d");
+ if(q!==null){cur=recs[+q];$("ovName").textContent=cur.name;$("ovCo").textContent=cur.lat+" , "+cur.lng;makeQR($("qrBig"),mapUrl(cur.lat,cur.lng),240);$("ov").className="on"}
+ else if(d!==null&&confirm("حذف هذا التسجيل؟")){recs.splice(+d,1);store();render()}
+};
+$("ovClose").onclick=function(){$("ov").className=""};
+$("ov").onclick=function(e){if(e.target===$("ov"))$("ov").className=""};
+$("ovDl").onclick=function(){
+ var c=$("qrBig").querySelector("canvas"),im=$("qrBig").querySelector("img");
+ if(!cur||(!c&&!im)){return}
+ var src=c||im,S=src.width||240,cv=document.createElement("canvas"),P=24;cv.width=S+P*2;cv.height=S+P*2+50;
+ var x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);
+ x.drawImage(c?c:im,P,P,S,S);x.fillStyle="#000";x.font="bold 22px Tahoma,Arial";x.textAlign="center";x.direction="rtl";x.fillText(cur.name,cv.width/2,S+P*2+22,cv.width-20);
+ var a=document.createElement("a");a.href=cv.toDataURL("image/png");a.download="QR_"+cur.name.replace(/[\\/:*?"<>|\s]+/g,"_")+".png";document.body.appendChild(a);a.click();a.remove()
+};
+
+$("btnExport").onclick=function(){
+ if(!recs.length){say("exMsg","لا توجد تسجيلات للتصدير.","err");return}
+ var ag=$("agent").value.trim(),fn="mosquees_"+today();
+ var head=["#","التاريخ","الوقت","اسم المسجد","اسم المكان","خط العرض","خط الطول","الدقة (م)","رابط الخريطة","المسجِّل"];
+ var rows=recs.slice().reverse().map(function(r,i){return[i+1,r.date,r.time,r.name,r.place,r.lat,r.lng,r.acc,mapUrl(r.lat,r.lng),ag]});
+ if(window.XLSX){try{var ws=XLSX.utils.aoa_to_sheet([head].concat(rows));ws["!cols"]=[5,11,7,26,28,11,11,9,40,16].map(function(w){return{wch:w}});
+  var wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};XLSX.utils.book_append_sheet(wb,ws,"Mosquees");XLSX.writeFile(wb,fn+".xlsx");say("exMsg","تم تنزيل ملف Excel: "+fn+".xlsx","good");return}catch(e){}}
+ var csv="\ufeff"+[head].concat(rows).map(function(r){return r.map(function(c){return'"'+String(c==null?"":c).replace(/"/g,'""')+'"'}).join(",")}).join("\r\n");
+ var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download=fn+".csv";document.body.appendChild(a);a.click();a.remove();
+ say("exMsg","تعذّر تحميل مكتبة Excel بلا إنترنت، فنُزّل ملف CSV يفتحه Excel مباشرة.","good")
+};
+$("btnClear").onclick=function(){
+ if(!recs.length)return;
+ if(confirm("سيُحذف كل شيء من هذا الجهاز. هل صدّرت الملف وأرسلته؟")&&confirm("تأكيد أخير: مسح "+recs.length+" تسجيل؟")){recs=[];store();render();say("exMsg","تم المسح.","good")}
+};
+load();render();showPos();
+})();
+</script>
+</body>
+</html>
