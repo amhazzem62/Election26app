@@ -30,6 +30,7 @@ button:disabled{opacity:.5}
 .rec small{color:var(--muted);display:block;direction:ltr;text-align:right}
 .acts{display:flex;gap:8px;margin-top:6px}.acts button,.acts a{width:auto;margin:0;padding:6px 12px;font-size:13px;border-radius:8px}
 .acts a{color:var(--green);font-weight:600;align-self:center}
+a.btnlink{display:block;text-align:center;text-decoration:none;font-weight:700;border-radius:12px;padding:12px 14px;margin-top:10px;border:1px solid var(--green);color:var(--green)}
 .empty{color:var(--muted);font-size:14px}
 #ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:9}
 #ov.on{display:flex}#ov .card{background:var(--card);border-radius:16px;padding:16px;max-width:360px;width:100%;text-align:center}
@@ -50,6 +51,7 @@ button:disabled{opacity:.5}
 <input id="place" autocomplete="off">
 <div class="acc" id="placeHint"></div>
 <div class="qrbox" id="qrWrap" style="display:none"><div id="qr"></div></div>
+<div id="navNow"></div>
 <details style="margin-top:10px"><summary style="cursor:pointer;font-size:14px;color:var(--muted)">إدخال الإحداثيات يدوياً</summary>
 <label for="latM">خط العرض</label><input id="latM" inputmode="decimal" dir="ltr" placeholder="36.4521">
 <label for="lngM">خط الطول</label><input id="lngM" inputmode="decimal" dir="ltr" placeholder="6.2630">
@@ -75,7 +77,7 @@ button:disabled{opacity:.5}
 
 <div id="ov"><div class="card"><div class="qrbox" style="margin:0"><div id="qrBig"></div></div>
 <h2 id="ovName" style="margin-top:10px"></h2><div class="acc" id="ovCo" style="direction:ltr"></div>
-<button type="button" id="ovDl">⬇ تنزيل صورة QR</button><button type="button" class="sec" id="ovClose">إغلاق</button></div></div>
+<a id="ovNav" class="btnlink" href="#" target="_blank" rel="noopener">🧭 فتح GPS للتوجيه</a><button type="button" id="ovDl">⬇ تنزيل صورة QR</button><button type="button" class="sec" id="ovClose">إغلاق</button></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -87,6 +89,7 @@ function pad(n){return n<10?"0"+n:""+n}
 function say(id,t,c){var e=$(id);e.textContent=t;e.className="msg"+(c?" "+c:"")}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function mapUrl(a,b){return"https://www.google.com/maps?q="+a+","+b}
+function navUrl(a,b){return"https://www.google.com/maps/dir/?api=1&destination="+a+","+b+"&travelmode=driving"}
 function valid(a,b){return isFinite(a)&&isFinite(b)&&a>=18&&a<=38&&b>=-9&&b<=12}
 function load(){try{recs=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){recs=[]}try{$("agent").value=localStorage.getItem(KAG)||""}catch(e){}}
 function store(){try{localStorage.setItem(KEY,JSON.stringify(recs))}catch(e){say("msg","تعذّر الحفظ على الجهاز. صدّر الملف الآن.","err")}}
@@ -98,7 +101,8 @@ function makeQR(el,text,size){
  new QRCode(el,{text:text,width:size,height:size,correctLevel:QRCode.CorrectLevel.M});return true}
 
 function showPos(){
- if(!pos){$("coords").textContent="—";$("acc").textContent="";$("qrWrap").style.display="none";return}
+ if(!pos){$("coords").textContent="—";$("acc").textContent="";$("qrWrap").style.display="none";$("navNow").innerHTML="";return}
+ $("navNow").innerHTML='<a class="btnlink" href="'+navUrl(pos.lat.toFixed(6),pos.lng.toFixed(6))+'" target="_blank" rel="noopener">🧭 فتح GPS للتوجيه إلى هذا الموقع</a>';
  $("coords").textContent=pos.lat.toFixed(6)+" , "+pos.lng.toFixed(6);
  var a=$("acc");
  if(pos.acc==null){a.textContent="إدخال يدوي";a.className="acc"}
@@ -130,7 +134,7 @@ $("btnGo").onclick=function(){
   if(!valid(pos.lat,pos.lng))say("msg","الموقع خارج حدود الجزائر. تحقق من الإحداثيات.","err");else suggest(pos.lat,pos.lng)
  },function(e){
   b.disabled=false;b.textContent="📍 تحديد الموقع وإنشاء QR";
-  say("msg",e.code===1?"رُفض إذن الموقع. افتح الرابط في Chrome وفعّل الموقع، أو أدخل الإحداثيات يدوياً.":"تعذّر تحديد الموقع. اخرج إلى مكان مفتوح وأعد المحاولة.","err")
+  say("msg",e.code===1?"رُفض إذن الموقع. افتح الرابط في Chrome واسمح بالموقع، أو أدخل الإحداثيات يدوياً.":"تعذّر تحديد الموقع. تأكد أن GPS مفعّل في إعدادات الهاتف (Localisation)، واخرج إلى مكان مفتوح وأعد المحاولة.","err")
  },{enableHighAccuracy:true,timeout:25000,maximumAge:0})
 };
 $("btnManual").onclick=function(){
@@ -158,13 +162,13 @@ function render(){
  var h="";
  recs.forEach(function(r,i){
   h+='<div class="rec"><b>'+esc(r.name)+"</b>"+(r.place?"<br>"+esc(r.place):"")+"<small>"+r.lat+" , "+r.lng+(r.acc!==""?" (±"+r.acc+" م)":"")+" — "+r.date+" "+r.time+"</small>"+
-  '<div class="acts"><button type="button" class="sec" data-q="'+i+'">QR</button><a href="'+mapUrl(r.lat,r.lng)+'" target="_blank" rel="noopener">الخريطة</a><button type="button" class="danger" data-d="'+i+'">حذف</button></div></div>'});
+  '<div class="acts"><button type="button" class="sec" data-q="'+i+'">QR</button><a href="'+navUrl(r.lat,r.lng)+'" target="_blank" rel="noopener">🧭 GPS</a><a href="'+mapUrl(r.lat,r.lng)+'" target="_blank" rel="noopener">الخريطة</a><button type="button" class="danger" data-d="'+i+'">حذف</button></div></div>'});
  $("list").innerHTML=h||'<p class="empty">لا توجد تسجيلات بعد.</p>'
 }
 var cur=null;
 $("list").onclick=function(e){
  var q=e.target.getAttribute("data-q"),d=e.target.getAttribute("data-d");
- if(q!==null){cur=recs[+q];$("ovName").textContent=cur.name;$("ovCo").textContent=cur.lat+" , "+cur.lng;makeQR($("qrBig"),mapUrl(cur.lat,cur.lng),240);$("ov").className="on"}
+ if(q!==null){cur=recs[+q];$("ovName").textContent=cur.name;$("ovCo").textContent=cur.lat+" , "+cur.lng;$("ovNav").href=navUrl(cur.lat,cur.lng);makeQR($("qrBig"),mapUrl(cur.lat,cur.lng),240);$("ov").className="on"}
  else if(d!==null&&confirm("حذف هذا التسجيل؟")){recs.splice(+d,1);store();render()}
 };
 $("ovClose").onclick=function(){$("ov").className=""};
